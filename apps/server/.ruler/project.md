@@ -7,11 +7,11 @@
 
 ## Server Structure
 
-- Keep module shape consistent: `*.service.ts`, `*.types.ts`, `*.validators.ts`, optional `*.utils.ts`.
+- Keep module shape consistent: `*.router.ts`, `*.service.ts`, `*.types.ts`, `*.validators.ts`, optional `*.utils.ts`.
 - Do not introduce `*.handlers.ts` as an extra layer unless explicitly required.
 
 ## Router Conventions
 
-- Keep tRPC router files thin.
-- Centralize TRPC error mapping helpers in `src/trpc/routers/router.utils.ts`.
-- Keep tRPC context input types in `src/trpc/context.types.ts`.
+- Keep oRPC router files thin.
+- Centralize domain error mapping in `src/orpc/error-mapper.ts`.
+- Keep oRPC context input types in `src/orpc/context.types.ts`.
