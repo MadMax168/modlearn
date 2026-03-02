@@ -1,4 +1,4 @@
-import { TRPCError } from "@trpc/server";
+import { ORPCError } from "@orpc/server";
 import {
 	CategoryNotFoundError,
 	CategorySlugConflictError,
@@ -16,8 +16,8 @@ import {
 	StorageRecordNotFoundError,
 } from "@/modules/file/file.types";
 import {
+	GenreNotFoundError,
 	GenreSlugConflictError,
-	GenreNotFoundError as ModuleGenreNotFoundError,
 } from "@/modules/genre/genre.types";
 import {
 	ContentNotFoundError as PlaylistContentNotFoundError,
@@ -30,123 +30,141 @@ import {
 	WatchProgressValidationError,
 } from "@/modules/watch-progress/watch-progress.types";
 
-export function mapCategoryError(error: unknown): never {
+export function toError(error: unknown): Error {
+	if (error instanceof Error) {
+		return error;
+	}
+
+	return new Error("Non-Error throwable", {
+		cause: error,
+	});
+}
+
+export function mapDomainErrorToOrpc(
+	error: unknown
+): ORPCError<string, unknown> | null {
 	if (error instanceof CategoryNotFoundError) {
-		throw new TRPCError({
-			code: "NOT_FOUND",
+		return new ORPCError("NOT_FOUND", {
 			message: error.message,
 		});
 	}
 
 	if (error instanceof CategorySlugConflictError) {
-		throw new TRPCError({
-			code: "CONFLICT",
+		return new ORPCError("CONFLICT", {
 			message: error.message,
 		});
 	}
 
-	throw error;
-}
-
-export function mapGenreError(error: unknown): never {
-	if (error instanceof ModuleGenreNotFoundError) {
-		throw new TRPCError({
-			code: "NOT_FOUND",
+	if (error instanceof GenreNotFoundError) {
+		return new ORPCError("NOT_FOUND", {
 			message: error.message,
 		});
 	}
 
 	if (error instanceof GenreSlugConflictError) {
-		throw new TRPCError({
-			code: "CONFLICT",
+		return new ORPCError("CONFLICT", {
 			message: error.message,
 		});
 	}
 
-	throw error;
-}
-
-export function mapServiceError(error: unknown): never {
 	if (
 		error instanceof ContentNotFoundError ||
 		error instanceof ContentCategoryNotFoundError ||
 		error instanceof ContentGenreNotFoundError
 	) {
-		throw new TRPCError({
-			code: "NOT_FOUND",
+		return new ORPCError("NOT_FOUND", {
 			message: error.message,
 		});
 	}
+
 	if (error instanceof InvalidClassificationInputError) {
-		throw new TRPCError({
-			code: "BAD_REQUEST",
+		return new ORPCError("BAD_REQUEST", {
 			message: error.message,
 		});
 	}
 
-	throw error;
-}
-
-export function mapPlaylistServiceError(error: unknown): never {
 	if (
 		error instanceof PlaylistNotFoundError ||
 		error instanceof PlaylistContentNotFoundError
 	) {
-		throw new TRPCError({
-			code: "NOT_FOUND",
+		return new ORPCError("NOT_FOUND", {
 			message: error.message,
 		});
 	}
 
 	if (error instanceof PlaylistReorderValidationError) {
-		throw new TRPCError({
-			code: "BAD_REQUEST",
+		return new ORPCError("BAD_REQUEST", {
 			message: error.message,
 		});
 	}
 
-	throw error;
-}
-
-export function mapFileError(error: unknown): never {
 	if (
 		error instanceof FileNotFoundError ||
 		error instanceof FileAlreadyDeletedError ||
 		error instanceof StorageRecordNotFoundError
 	) {
-		throw new TRPCError({
-			code: "NOT_FOUND",
+		return new ORPCError("NOT_FOUND", {
 			message: error.message,
 		});
 	}
 
 	if (error instanceof FileCreationError) {
-		throw new TRPCError({
-			code: "BAD_REQUEST",
+		return new ORPCError("BAD_REQUEST", {
 			message: error.message,
 		});
 	}
 
-	throw error;
-}
-
-export function mapWatchProgressError(error: unknown): never {
 	if (
 		error instanceof WatchProgressContentNotFoundError ||
 		error instanceof WatchProgressPlaylistNotFoundError
 	) {
-		throw new TRPCError({
-			code: "NOT_FOUND",
+		return new ORPCError("NOT_FOUND", {
 			message: error.message,
 		});
 	}
 
 	if (error instanceof WatchProgressValidationError) {
-		throw new TRPCError({
-			code: "BAD_REQUEST",
+		return new ORPCError("BAD_REQUEST", {
 			message: error.message,
 		});
 	}
 
-	throw error;
+	return null;
+}
+
+export function toInternalOrpcError(
+	error: unknown
+): ORPCError<"INTERNAL_SERVER_ERROR", unknown> {
+	return new ORPCError("INTERNAL_SERVER_ERROR", {
+		message: "Internal server error",
+		cause: toError(error),
+	});
+}
+
+export async function rpcErrorInterceptor(options: {
+	next: (options?: unknown) => Promise<unknown>;
+	request?: { method?: string; pathname?: string; url?: string | URL };
+}): Promise<unknown> {
+	try {
+		return await options.next();
+	} catch (error) {
+		if (error instanceof ORPCError) {
+			throw error;
+		}
+
+		const mapped = mapDomainErrorToOrpc(error);
+		if (mapped) {
+			throw mapped;
+		}
+
+		console.error("Unhandled RPC error", {
+			method: options.request?.method,
+			path:
+				options.request?.pathname ??
+				(options.request?.url ? String(options.request.url) : undefined),
+			error,
+		});
+
+		throw toInternalOrpcError(error);
+	}
 }

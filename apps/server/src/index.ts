@@ -1,22 +1,17 @@
 import { cors } from "@elysiajs/cors";
 import { env } from "@modlearn/env/server";
-import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
+import { RPCHandler } from "@orpc/server/fetch";
 import { Elysia } from "elysia";
-import { collectRoutes, generateDocsHtml } from "trpc-docs-generator";
 import { auth } from "@/lib/auth";
 import { ensureBucketExists } from "@/lib/storage/s3-bucket";
-import { createContext } from "@/trpc/context";
-import { appRouter } from "@/trpc/routers";
+import { createContext } from "@/orpc/context";
+import { rpcErrorInterceptor } from "@/orpc/error-mapper";
+import { generateOpenApiSpec, renderScalarDocsHtml } from "@/orpc/openapi";
+import { appRouter } from "@/orpc/router";
 
-const routes = collectRoutes(appRouter);
-
-export const docsHtml = generateDocsHtml(routes, {
-	title: "My API Documentation",
+const rpcHandler = new RPCHandler(appRouter, {
+	interceptors: [rpcErrorInterceptor as never],
 });
-
-const htmlHeaders = {
-	"content-type": "text/html; charset=utf-8",
-};
 
 export const createServerApp = () =>
 	new Elysia()
@@ -35,24 +30,40 @@ export const createServerApp = () =>
 			}
 			return status(405);
 		})
-		.all("/trpc/*", async (context) => {
-			const res = await fetchRequestHandler({
-				endpoint: "/trpc",
-				router: appRouter,
-				req: context.request,
-				createContext: () => createContext({ context }),
-			});
-			return res;
+		.get("/docs/openapi.json", async () => {
+			const spec = await generateOpenApiSpec();
+			return Response.json(spec);
 		})
-		.get("/", () => new Response(docsHtml, { headers: htmlHeaders }))
-		.get("/index.html", () => new Response(docsHtml, { headers: htmlHeaders }))
-		.get("/docs", () => new Response(docsHtml, { headers: htmlHeaders }));
+		.get("/docs", () => {
+			return new Response(renderScalarDocsHtml("/docs/openapi.json"), {
+				headers: {
+					"content-type": "text/html; charset=utf-8",
+				},
+			});
+		})
+		.all(
+			"/rpc/*",
+			async (context) => {
+				const result = await rpcHandler.handle(context.request, {
+					prefix: "/rpc",
+					context: await createContext({ context }),
+				});
+
+				if (!(result.matched && result.response)) {
+					return context.status(404);
+				}
+
+				return result.response;
+			},
+			{
+				parse: "none",
+			}
+		);
 
 if (import.meta.main) {
 	createServerApp().listen(3000, async () => {
 		console.log("Server is running on http://localhost:3000");
 
-		// Initialize S3 bucket on startup
 		try {
 			const result = await ensureBucketExists(env.S3_BUCKET_NAME);
 			if (result.created) {
@@ -62,7 +73,6 @@ if (import.meta.main) {
 			}
 		} catch (error) {
 			console.error("❌ Failed to initialize S3 bucket:", error);
-			// Don't crash the server, but log the error
 		}
 	});
 }
