@@ -446,30 +446,53 @@ async function syncWatchProgress(params: {
 	});
 }
 
-async function recordCompletionAnalytics(params: {
+async function ensureSessionViewAnalytics(params: {
 	db: DbClient;
 	session: typeof playbackSession.$inferSelect;
-	position: number;
-	duration: number;
 	deviceType?: string | null;
 }) {
-	const { db, session, position, duration, deviceType } = params;
-	if (!isCompleted(position, duration)) {
+	const { db, session, deviceType } = params;
+	const [created] = await db
+		.insert(contentView)
+		.values({
+			contentId: session.contentId,
+			userId: session.userId,
+			sessionId: null,
+			playbackSessionId: session.id,
+			watchDuration: 0,
+			deviceType: deviceType ?? session.deviceType ?? null,
+		})
+		.onConflictDoNothing({
+			target: [contentView.playbackSessionId],
+		})
+		.returning({
+			id: contentView.id,
+		});
+
+	if (!created) {
 		return;
 	}
-
-	await db.insert(contentView).values({
-		contentId: session.contentId,
-		userId: session.userId,
-		sessionId: null,
-		watchDuration: position,
-		deviceType: deviceType ?? session.deviceType ?? null,
-	});
 
 	await db
 		.update(content)
 		.set({ viewCount: sql`${content.viewCount} + 1` })
 		.where(eq(content.id, session.contentId));
+}
+
+async function finalizeSessionViewAnalytics(params: {
+	db: DbClient;
+	session: typeof playbackSession.$inferSelect;
+	position: number;
+	deviceType?: string | null;
+}) {
+	const { db, session, position, deviceType } = params;
+	await db
+		.update(contentView)
+		.set({
+			watchDuration: sql`GREATEST(COALESCE(${contentView.watchDuration}, 0), ${position})`,
+			deviceType: deviceType ?? session.deviceType ?? null,
+		})
+		.where(eq(contentView.playbackSessionId, session.id));
 }
 
 async function executeLifecycleEvent(params: {
@@ -542,12 +565,19 @@ async function executeLifecycleEvent(params: {
 		stopEvent: eventType === "STOP",
 	});
 
+	if (eventType === "PLAY" || eventType === "STOP") {
+		await ensureSessionViewAnalytics({
+			db,
+			session: updatedSession,
+			deviceType: input.deviceType,
+		});
+	}
+
 	if (eventType === "STOP") {
-		await recordCompletionAnalytics({
+		await finalizeSessionViewAnalytics({
 			db,
 			session: updatedSession,
 			position,
-			duration: input.duration,
 			deviceType: input.deviceType,
 		});
 	}

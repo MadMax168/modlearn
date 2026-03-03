@@ -271,6 +271,13 @@ describe("playback service", () => {
 			},
 		});
 
+		const viewRowsAfterPlay = await testDb.db
+			.select()
+			.from(contentView)
+			.where(eq(contentView.playbackSessionId, created.sessionId));
+		expect(viewRowsAfterPlay).toHaveLength(1);
+		expect(viewRowsAfterPlay[0]?.watchDuration).toBe(0);
+
 		await recordPlaybackPause({
 			db: testDb.db,
 			input: {
@@ -334,9 +341,73 @@ describe("playback service", () => {
 		const [viewRow] = await testDb.db
 			.select()
 			.from(contentView)
-			.where(eq(contentView.contentId, seeded.content.id));
+			.where(eq(contentView.playbackSessionId, created.sessionId));
 		expect(viewRow).toBeDefined();
 		expect(viewRow?.watchDuration).toBe(100);
+
+		const [contentRow] = await testDb.db
+			.select({ viewCount: content.viewCount })
+			.from(content)
+			.where(eq(content.id, seeded.content.id));
+		expect(contentRow?.viewCount).toBe(1);
+
+		const totalSessionViewRows = await testDb.db
+			.select()
+			.from(contentView)
+			.where(eq(contentView.playbackSessionId, created.sessionId));
+		expect(totalSessionViewRows).toHaveLength(1);
+	});
+
+	it("tracks partial watches and increments view count once per playback session", async () => {
+		const user = await createTestUser(testDb.client, {
+			email: "playback-partial-watch@example.com",
+		});
+		const seeded = await seedOwnedPlayableContent({
+			testDb,
+			userId: user.id,
+		});
+
+		const created = await createPlaybackSession({
+			db: testDb.db,
+			input: {
+				userId: user.id,
+				contentId: seeded.content.id,
+				deviceType: "web",
+			},
+		});
+
+		await recordPlaybackPlay({
+			db: testDb.db,
+			input: {
+				userId: user.id,
+				sessionId: created.sessionId,
+				playbackToken: created.playbackToken,
+				position: 5,
+				duration: 100,
+				deviceType: "web",
+			},
+		});
+
+		const stopped = await recordPlaybackStop({
+			db: testDb.db,
+			input: {
+				userId: user.id,
+				sessionId: created.sessionId,
+				playbackToken: created.playbackToken,
+				position: 40,
+				duration: 100,
+				deviceType: "web",
+			},
+		});
+
+		expect(stopped.isCompleted).toBe(false);
+
+		const viewRows = await testDb.db
+			.select()
+			.from(contentView)
+			.where(eq(contentView.playbackSessionId, created.sessionId));
+		expect(viewRows).toHaveLength(1);
+		expect(viewRows[0]?.watchDuration).toBe(40);
 
 		const [contentRow] = await testDb.db
 			.select({ viewCount: content.viewCount })
