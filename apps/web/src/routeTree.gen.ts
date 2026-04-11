@@ -15,6 +15,8 @@ import { Route as AdminLayoutRouteImport } from './routes/_admin-layout'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminLayoutAdminIndexRouteImport } from './routes/_admin-layout/admin/index'
 import { Route as AdminLayoutAdminDashboardRouteImport } from './routes/_admin-layout/admin/dashboard'
+import { Route as AdminLayoutAdminCoursesNewRouteImport } from './routes/_admin-layout/admin/courses/new'
+import { Route as AdminLayoutAdminCoursesManageRouteImport } from './routes/_admin-layout/admin/courses/manage'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -46,6 +48,18 @@ const AdminLayoutAdminDashboardRoute =
     path: '/admin/dashboard',
     getParentRoute: () => AdminLayoutRoute,
   } as any)
+const AdminLayoutAdminCoursesNewRoute =
+  AdminLayoutAdminCoursesNewRouteImport.update({
+    id: '/admin/courses/new',
+    path: '/admin/courses/new',
+    getParentRoute: () => AdminLayoutRoute,
+  } as any)
+const AdminLayoutAdminCoursesManageRoute =
+  AdminLayoutAdminCoursesManageRouteImport.update({
+    id: '/admin/courses/manage',
+    path: '/admin/courses/manage',
+    getParentRoute: () => AdminLayoutRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -53,6 +67,8 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/admin/dashboard': typeof AdminLayoutAdminDashboardRoute
   '/admin/': typeof AdminLayoutAdminIndexRoute
+  '/admin/courses/manage': typeof AdminLayoutAdminCoursesManageRoute
+  '/admin/courses/new': typeof AdminLayoutAdminCoursesNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -60,6 +76,8 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/admin/dashboard': typeof AdminLayoutAdminDashboardRoute
   '/admin': typeof AdminLayoutAdminIndexRoute
+  '/admin/courses/manage': typeof AdminLayoutAdminCoursesManageRoute
+  '/admin/courses/new': typeof AdminLayoutAdminCoursesNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -69,12 +87,28 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_admin-layout/admin/dashboard': typeof AdminLayoutAdminDashboardRoute
   '/_admin-layout/admin/': typeof AdminLayoutAdminIndexRoute
+  '/_admin-layout/admin/courses/manage': typeof AdminLayoutAdminCoursesManageRoute
+  '/_admin-layout/admin/courses/new': typeof AdminLayoutAdminCoursesNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/login' | '/admin/dashboard' | '/admin/'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/admin/dashboard'
+    | '/admin/'
+    | '/admin/courses/manage'
+    | '/admin/courses/new'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/login' | '/admin/dashboard' | '/admin'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/login'
+    | '/admin/dashboard'
+    | '/admin'
+    | '/admin/courses/manage'
+    | '/admin/courses/new'
   id:
     | '__root__'
     | '/'
@@ -83,6 +117,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/_admin-layout/admin/dashboard'
     | '/_admin-layout/admin/'
+    | '/_admin-layout/admin/courses/manage'
+    | '/_admin-layout/admin/courses/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -136,17 +172,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLayoutAdminDashboardRouteImport
       parentRoute: typeof AdminLayoutRoute
     }
+    '/_admin-layout/admin/courses/new': {
+      id: '/_admin-layout/admin/courses/new'
+      path: '/admin/courses/new'
+      fullPath: '/admin/courses/new'
+      preLoaderRoute: typeof AdminLayoutAdminCoursesNewRouteImport
+      parentRoute: typeof AdminLayoutRoute
+    }
+    '/_admin-layout/admin/courses/manage': {
+      id: '/_admin-layout/admin/courses/manage'
+      path: '/admin/courses/manage'
+      fullPath: '/admin/courses/manage'
+      preLoaderRoute: typeof AdminLayoutAdminCoursesManageRouteImport
+      parentRoute: typeof AdminLayoutRoute
+    }
   }
 }
 
 interface AdminLayoutRouteChildren {
   AdminLayoutAdminDashboardRoute: typeof AdminLayoutAdminDashboardRoute
   AdminLayoutAdminIndexRoute: typeof AdminLayoutAdminIndexRoute
+  AdminLayoutAdminCoursesManageRoute: typeof AdminLayoutAdminCoursesManageRoute
+  AdminLayoutAdminCoursesNewRoute: typeof AdminLayoutAdminCoursesNewRoute
 }
 
 const AdminLayoutRouteChildren: AdminLayoutRouteChildren = {
   AdminLayoutAdminDashboardRoute: AdminLayoutAdminDashboardRoute,
   AdminLayoutAdminIndexRoute: AdminLayoutAdminIndexRoute,
+  AdminLayoutAdminCoursesManageRoute: AdminLayoutAdminCoursesManageRoute,
+  AdminLayoutAdminCoursesNewRoute: AdminLayoutAdminCoursesNewRoute,
 }
 
 const AdminLayoutRouteWithChildren = AdminLayoutRoute._addFileChildren(

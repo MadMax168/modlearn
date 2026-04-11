@@ -8,9 +8,6 @@ export const Route = createFileRoute("/_admin-layout/admin/dashboard")({
 function AdminDashboardPage() {
 	return (
 		<div className="space-y-6">
-			{/* Page Title */}
-			<h1 className="font-bold text-2xl">Dashboard</h1>
-
 			{/* Stat Cards Row */}
 			<div className="grid grid-cols-4 gap-4">
 				<StatCard
