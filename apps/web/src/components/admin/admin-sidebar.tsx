@@ -18,11 +18,11 @@ const navItems = [
 	{ label: "Users", icon: Users, to: "/admin/users" },
 	{ label: "Content", icon: Music, to: "/admin/content" },
 	{
-		label: "Course",
+		label: "Playlist",
 		icon: BookOpen,
 		children: [
-			{ label: "Manage Course", to: "/admin/courses/manage" },
-			{ label: "Add Course", to: "/admin/courses/new" },
+			{ label: "Manage Playlists", to: "/admin/playlists" },
+			{ label: "Add Playlist", to: "/admin/playlists/new" },
 		],
 	},
 	{ label: "Revenue", icon: DollarSign, to: "/admin/revenue" },

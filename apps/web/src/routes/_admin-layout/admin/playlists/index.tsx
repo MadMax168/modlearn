@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import ManageCourseTable from "@/components/admin/courses/manage-course-table";
+import ManageCourseTable from "@/components/admin/playlists/manage-playlist-table";
 
-export const Route = createFileRoute("/_admin-layout/admin/courses/manage")({
+export const Route = createFileRoute("/_admin-layout/admin/playlists/")({
 	component: ManageCoursePage,
 });
 
@@ -25,5 +25,5 @@ function ManageCoursePage() {
 
 			<ManageCourseTable />
 		</div>
-	);
+	)
 }

@@ -15,7 +15,9 @@ import { Route as AdminLayoutRouteImport } from './routes/_admin-layout'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminLayoutAdminIndexRouteImport } from './routes/_admin-layout/admin/index'
 import { Route as AdminLayoutAdminDashboardRouteImport } from './routes/_admin-layout/admin/dashboard'
-import { Route as AdminLayoutAdminCoursesManageRouteImport } from './routes/_admin-layout/admin/courses/manage'
+import { Route as AdminLayoutAdminPlaylistsIndexRouteImport } from './routes/_admin-layout/admin/playlists/index'
+import { Route as AdminLayoutAdminPlaylistsNewRouteImport } from './routes/_admin-layout/admin/playlists/new'
+import { Route as AdminLayoutAdminPlaylistsIdRouteImport } from './routes/_admin-layout/admin/playlists/$id'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -47,10 +49,22 @@ const AdminLayoutAdminDashboardRoute =
     path: '/admin/dashboard',
     getParentRoute: () => AdminLayoutRoute,
   } as any)
-const AdminLayoutAdminCoursesManageRoute =
-  AdminLayoutAdminCoursesManageRouteImport.update({
-    id: '/admin/courses/manage',
-    path: '/admin/courses/manage',
+const AdminLayoutAdminPlaylistsIndexRoute =
+  AdminLayoutAdminPlaylistsIndexRouteImport.update({
+    id: '/admin/playlists/',
+    path: '/admin/playlists/',
+    getParentRoute: () => AdminLayoutRoute,
+  } as any)
+const AdminLayoutAdminPlaylistsNewRoute =
+  AdminLayoutAdminPlaylistsNewRouteImport.update({
+    id: '/admin/playlists/new',
+    path: '/admin/playlists/new',
+    getParentRoute: () => AdminLayoutRoute,
+  } as any)
+const AdminLayoutAdminPlaylistsIdRoute =
+  AdminLayoutAdminPlaylistsIdRouteImport.update({
+    id: '/admin/playlists/$id',
+    path: '/admin/playlists/$id',
     getParentRoute: () => AdminLayoutRoute,
   } as any)
 
@@ -60,7 +74,9 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/admin/dashboard': typeof AdminLayoutAdminDashboardRoute
   '/admin/': typeof AdminLayoutAdminIndexRoute
-  '/admin/courses/manage': typeof AdminLayoutAdminCoursesManageRoute
+  '/admin/playlists/$id': typeof AdminLayoutAdminPlaylistsIdRoute
+  '/admin/playlists/new': typeof AdminLayoutAdminPlaylistsNewRoute
+  '/admin/playlists/': typeof AdminLayoutAdminPlaylistsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -68,7 +84,9 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/admin/dashboard': typeof AdminLayoutAdminDashboardRoute
   '/admin': typeof AdminLayoutAdminIndexRoute
-  '/admin/courses/manage': typeof AdminLayoutAdminCoursesManageRoute
+  '/admin/playlists/$id': typeof AdminLayoutAdminPlaylistsIdRoute
+  '/admin/playlists/new': typeof AdminLayoutAdminPlaylistsNewRoute
+  '/admin/playlists': typeof AdminLayoutAdminPlaylistsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -78,7 +96,9 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_admin-layout/admin/dashboard': typeof AdminLayoutAdminDashboardRoute
   '/_admin-layout/admin/': typeof AdminLayoutAdminIndexRoute
-  '/_admin-layout/admin/courses/manage': typeof AdminLayoutAdminCoursesManageRoute
+  '/_admin-layout/admin/playlists/$id': typeof AdminLayoutAdminPlaylistsIdRoute
+  '/_admin-layout/admin/playlists/new': typeof AdminLayoutAdminPlaylistsNewRoute
+  '/_admin-layout/admin/playlists/': typeof AdminLayoutAdminPlaylistsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -88,7 +108,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin/dashboard'
     | '/admin/'
-    | '/admin/courses/manage'
+    | '/admin/playlists/$id'
+    | '/admin/playlists/new'
+    | '/admin/playlists/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -96,7 +118,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin/dashboard'
     | '/admin'
-    | '/admin/courses/manage'
+    | '/admin/playlists/$id'
+    | '/admin/playlists/new'
+    | '/admin/playlists'
   id:
     | '__root__'
     | '/'
@@ -105,7 +129,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/_admin-layout/admin/dashboard'
     | '/_admin-layout/admin/'
-    | '/_admin-layout/admin/courses/manage'
+    | '/_admin-layout/admin/playlists/$id'
+    | '/_admin-layout/admin/playlists/new'
+    | '/_admin-layout/admin/playlists/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -159,11 +185,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLayoutAdminDashboardRouteImport
       parentRoute: typeof AdminLayoutRoute
     }
-    '/_admin-layout/admin/courses/manage': {
-      id: '/_admin-layout/admin/courses/manage'
-      path: '/admin/courses/manage'
-      fullPath: '/admin/courses/manage'
-      preLoaderRoute: typeof AdminLayoutAdminCoursesManageRouteImport
+    '/_admin-layout/admin/playlists/': {
+      id: '/_admin-layout/admin/playlists/'
+      path: '/admin/playlists'
+      fullPath: '/admin/playlists/'
+      preLoaderRoute: typeof AdminLayoutAdminPlaylistsIndexRouteImport
+      parentRoute: typeof AdminLayoutRoute
+    }
+    '/_admin-layout/admin/playlists/new': {
+      id: '/_admin-layout/admin/playlists/new'
+      path: '/admin/playlists/new'
+      fullPath: '/admin/playlists/new'
+      preLoaderRoute: typeof AdminLayoutAdminPlaylistsNewRouteImport
+      parentRoute: typeof AdminLayoutRoute
+    }
+    '/_admin-layout/admin/playlists/$id': {
+      id: '/_admin-layout/admin/playlists/$id'
+      path: '/admin/playlists/$id'
+      fullPath: '/admin/playlists/$id'
+      preLoaderRoute: typeof AdminLayoutAdminPlaylistsIdRouteImport
       parentRoute: typeof AdminLayoutRoute
     }
   }
@@ -172,13 +212,17 @@ declare module '@tanstack/react-router' {
 interface AdminLayoutRouteChildren {
   AdminLayoutAdminDashboardRoute: typeof AdminLayoutAdminDashboardRoute
   AdminLayoutAdminIndexRoute: typeof AdminLayoutAdminIndexRoute
-  AdminLayoutAdminCoursesManageRoute: typeof AdminLayoutAdminCoursesManageRoute
+  AdminLayoutAdminPlaylistsIdRoute: typeof AdminLayoutAdminPlaylistsIdRoute
+  AdminLayoutAdminPlaylistsNewRoute: typeof AdminLayoutAdminPlaylistsNewRoute
+  AdminLayoutAdminPlaylistsIndexRoute: typeof AdminLayoutAdminPlaylistsIndexRoute
 }
 
 const AdminLayoutRouteChildren: AdminLayoutRouteChildren = {
   AdminLayoutAdminDashboardRoute: AdminLayoutAdminDashboardRoute,
   AdminLayoutAdminIndexRoute: AdminLayoutAdminIndexRoute,
-  AdminLayoutAdminCoursesManageRoute: AdminLayoutAdminCoursesManageRoute,
+  AdminLayoutAdminPlaylistsIdRoute: AdminLayoutAdminPlaylistsIdRoute,
+  AdminLayoutAdminPlaylistsNewRoute: AdminLayoutAdminPlaylistsNewRoute,
+  AdminLayoutAdminPlaylistsIndexRoute: AdminLayoutAdminPlaylistsIndexRoute,
 }
 
 const AdminLayoutRouteWithChildren = AdminLayoutRoute._addFileChildren(
