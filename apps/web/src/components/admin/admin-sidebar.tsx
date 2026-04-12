@@ -1,8 +1,8 @@
 import { Link, useRouteContext, useRouterState } from "@tanstack/react-router";
 import {
 	BookOpen,
-	ChartBar,
 	ChartLine,
+	ChartBar,
 	ChevronRight,
 	DollarSign,
 	LogOut,
@@ -70,9 +70,9 @@ export default function AdminSidebar() {
 						{/* Item with child */}
 						{item.children ? (
 							<button
-								className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors${
+								className={`flex w-full text-muted-foreground items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors${
 									isGroupActive
-										? "font-medium text-foreground"
+										? "font-medium bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
 										: "text-muted-foreground hover:bg-accent hover:text-foreground"
 								}`}
 								onClick={() => toggleExpand(item.label)}

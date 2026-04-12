@@ -15,7 +15,6 @@ import { Route as AdminLayoutRouteImport } from './routes/_admin-layout'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminLayoutAdminIndexRouteImport } from './routes/_admin-layout/admin/index'
 import { Route as AdminLayoutAdminDashboardRouteImport } from './routes/_admin-layout/admin/dashboard'
-import { Route as AdminLayoutAdminCoursesNewRouteImport } from './routes/_admin-layout/admin/courses/new'
 import { Route as AdminLayoutAdminCoursesManageRouteImport } from './routes/_admin-layout/admin/courses/manage'
 
 const LoginRoute = LoginRouteImport.update({
@@ -48,12 +47,6 @@ const AdminLayoutAdminDashboardRoute =
     path: '/admin/dashboard',
     getParentRoute: () => AdminLayoutRoute,
   } as any)
-const AdminLayoutAdminCoursesNewRoute =
-  AdminLayoutAdminCoursesNewRouteImport.update({
-    id: '/admin/courses/new',
-    path: '/admin/courses/new',
-    getParentRoute: () => AdminLayoutRoute,
-  } as any)
 const AdminLayoutAdminCoursesManageRoute =
   AdminLayoutAdminCoursesManageRouteImport.update({
     id: '/admin/courses/manage',
@@ -68,7 +61,6 @@ export interface FileRoutesByFullPath {
   '/admin/dashboard': typeof AdminLayoutAdminDashboardRoute
   '/admin/': typeof AdminLayoutAdminIndexRoute
   '/admin/courses/manage': typeof AdminLayoutAdminCoursesManageRoute
-  '/admin/courses/new': typeof AdminLayoutAdminCoursesNewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -77,7 +69,6 @@ export interface FileRoutesByTo {
   '/admin/dashboard': typeof AdminLayoutAdminDashboardRoute
   '/admin': typeof AdminLayoutAdminIndexRoute
   '/admin/courses/manage': typeof AdminLayoutAdminCoursesManageRoute
-  '/admin/courses/new': typeof AdminLayoutAdminCoursesNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -88,7 +79,6 @@ export interface FileRoutesById {
   '/_admin-layout/admin/dashboard': typeof AdminLayoutAdminDashboardRoute
   '/_admin-layout/admin/': typeof AdminLayoutAdminIndexRoute
   '/_admin-layout/admin/courses/manage': typeof AdminLayoutAdminCoursesManageRoute
-  '/_admin-layout/admin/courses/new': typeof AdminLayoutAdminCoursesNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -99,7 +89,6 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin/'
     | '/admin/courses/manage'
-    | '/admin/courses/new'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -108,7 +97,6 @@ export interface FileRouteTypes {
     | '/admin/dashboard'
     | '/admin'
     | '/admin/courses/manage'
-    | '/admin/courses/new'
   id:
     | '__root__'
     | '/'
@@ -118,7 +106,6 @@ export interface FileRouteTypes {
     | '/_admin-layout/admin/dashboard'
     | '/_admin-layout/admin/'
     | '/_admin-layout/admin/courses/manage'
-    | '/_admin-layout/admin/courses/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -172,13 +159,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLayoutAdminDashboardRouteImport
       parentRoute: typeof AdminLayoutRoute
     }
-    '/_admin-layout/admin/courses/new': {
-      id: '/_admin-layout/admin/courses/new'
-      path: '/admin/courses/new'
-      fullPath: '/admin/courses/new'
-      preLoaderRoute: typeof AdminLayoutAdminCoursesNewRouteImport
-      parentRoute: typeof AdminLayoutRoute
-    }
     '/_admin-layout/admin/courses/manage': {
       id: '/_admin-layout/admin/courses/manage'
       path: '/admin/courses/manage'
@@ -193,14 +173,12 @@ interface AdminLayoutRouteChildren {
   AdminLayoutAdminDashboardRoute: typeof AdminLayoutAdminDashboardRoute
   AdminLayoutAdminIndexRoute: typeof AdminLayoutAdminIndexRoute
   AdminLayoutAdminCoursesManageRoute: typeof AdminLayoutAdminCoursesManageRoute
-  AdminLayoutAdminCoursesNewRoute: typeof AdminLayoutAdminCoursesNewRoute
 }
 
 const AdminLayoutRouteChildren: AdminLayoutRouteChildren = {
   AdminLayoutAdminDashboardRoute: AdminLayoutAdminDashboardRoute,
   AdminLayoutAdminIndexRoute: AdminLayoutAdminIndexRoute,
   AdminLayoutAdminCoursesManageRoute: AdminLayoutAdminCoursesManageRoute,
-  AdminLayoutAdminCoursesNewRoute: AdminLayoutAdminCoursesNewRoute,
 }
 
 const AdminLayoutRouteWithChildren = AdminLayoutRoute._addFileChildren(
