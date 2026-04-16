@@ -16,8 +16,12 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminLayoutAdminIndexRouteImport } from './routes/_admin-layout/admin/index'
 import { Route as AdminLayoutAdminDashboardRouteImport } from './routes/_admin-layout/admin/dashboard'
 import { Route as AdminLayoutAdminPlaylistsIndexRouteImport } from './routes/_admin-layout/admin/playlists/index'
+import { Route as AdminLayoutAdminContentIndexRouteImport } from './routes/_admin-layout/admin/content/index'
 import { Route as AdminLayoutAdminPlaylistsNewRouteImport } from './routes/_admin-layout/admin/playlists/new'
 import { Route as AdminLayoutAdminPlaylistsIdRouteImport } from './routes/_admin-layout/admin/playlists/$id'
+import { Route as AdminLayoutAdminPlaylistsIdIndexRouteImport } from './routes/_admin-layout/admin/playlists/$id.index'
+import { Route as AdminLayoutAdminPlaylistsIdPricingRouteImport } from './routes/_admin-layout/admin/playlists/$id.pricing'
+import { Route as AdminLayoutAdminPlaylistsIdEpisodesRouteImport } from './routes/_admin-layout/admin/playlists/$id.episodes'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -55,6 +59,12 @@ const AdminLayoutAdminPlaylistsIndexRoute =
     path: '/admin/playlists/',
     getParentRoute: () => AdminLayoutRoute,
   } as any)
+const AdminLayoutAdminContentIndexRoute =
+  AdminLayoutAdminContentIndexRouteImport.update({
+    id: '/admin/content/',
+    path: '/admin/content/',
+    getParentRoute: () => AdminLayoutRoute,
+  } as any)
 const AdminLayoutAdminPlaylistsNewRoute =
   AdminLayoutAdminPlaylistsNewRouteImport.update({
     id: '/admin/playlists/new',
@@ -67,6 +77,24 @@ const AdminLayoutAdminPlaylistsIdRoute =
     path: '/admin/playlists/$id',
     getParentRoute: () => AdminLayoutRoute,
   } as any)
+const AdminLayoutAdminPlaylistsIdIndexRoute =
+  AdminLayoutAdminPlaylistsIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AdminLayoutAdminPlaylistsIdRoute,
+  } as any)
+const AdminLayoutAdminPlaylistsIdPricingRoute =
+  AdminLayoutAdminPlaylistsIdPricingRouteImport.update({
+    id: '/pricing',
+    path: '/pricing',
+    getParentRoute: () => AdminLayoutAdminPlaylistsIdRoute,
+  } as any)
+const AdminLayoutAdminPlaylistsIdEpisodesRoute =
+  AdminLayoutAdminPlaylistsIdEpisodesRouteImport.update({
+    id: '/episodes',
+    path: '/episodes',
+    getParentRoute: () => AdminLayoutAdminPlaylistsIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -74,9 +102,13 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/admin/dashboard': typeof AdminLayoutAdminDashboardRoute
   '/admin/': typeof AdminLayoutAdminIndexRoute
-  '/admin/playlists/$id': typeof AdminLayoutAdminPlaylistsIdRoute
+  '/admin/playlists/$id': typeof AdminLayoutAdminPlaylistsIdRouteWithChildren
   '/admin/playlists/new': typeof AdminLayoutAdminPlaylistsNewRoute
+  '/admin/content/': typeof AdminLayoutAdminContentIndexRoute
   '/admin/playlists/': typeof AdminLayoutAdminPlaylistsIndexRoute
+  '/admin/playlists/$id/episodes': typeof AdminLayoutAdminPlaylistsIdEpisodesRoute
+  '/admin/playlists/$id/pricing': typeof AdminLayoutAdminPlaylistsIdPricingRoute
+  '/admin/playlists/$id/': typeof AdminLayoutAdminPlaylistsIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -84,9 +116,12 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/admin/dashboard': typeof AdminLayoutAdminDashboardRoute
   '/admin': typeof AdminLayoutAdminIndexRoute
-  '/admin/playlists/$id': typeof AdminLayoutAdminPlaylistsIdRoute
   '/admin/playlists/new': typeof AdminLayoutAdminPlaylistsNewRoute
+  '/admin/content': typeof AdminLayoutAdminContentIndexRoute
   '/admin/playlists': typeof AdminLayoutAdminPlaylistsIndexRoute
+  '/admin/playlists/$id/episodes': typeof AdminLayoutAdminPlaylistsIdEpisodesRoute
+  '/admin/playlists/$id/pricing': typeof AdminLayoutAdminPlaylistsIdPricingRoute
+  '/admin/playlists/$id': typeof AdminLayoutAdminPlaylistsIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -96,9 +131,13 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_admin-layout/admin/dashboard': typeof AdminLayoutAdminDashboardRoute
   '/_admin-layout/admin/': typeof AdminLayoutAdminIndexRoute
-  '/_admin-layout/admin/playlists/$id': typeof AdminLayoutAdminPlaylistsIdRoute
+  '/_admin-layout/admin/playlists/$id': typeof AdminLayoutAdminPlaylistsIdRouteWithChildren
   '/_admin-layout/admin/playlists/new': typeof AdminLayoutAdminPlaylistsNewRoute
+  '/_admin-layout/admin/content/': typeof AdminLayoutAdminContentIndexRoute
   '/_admin-layout/admin/playlists/': typeof AdminLayoutAdminPlaylistsIndexRoute
+  '/_admin-layout/admin/playlists/$id/episodes': typeof AdminLayoutAdminPlaylistsIdEpisodesRoute
+  '/_admin-layout/admin/playlists/$id/pricing': typeof AdminLayoutAdminPlaylistsIdPricingRoute
+  '/_admin-layout/admin/playlists/$id/': typeof AdminLayoutAdminPlaylistsIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -110,7 +149,11 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/playlists/$id'
     | '/admin/playlists/new'
+    | '/admin/content/'
     | '/admin/playlists/'
+    | '/admin/playlists/$id/episodes'
+    | '/admin/playlists/$id/pricing'
+    | '/admin/playlists/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -118,9 +161,12 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin/dashboard'
     | '/admin'
-    | '/admin/playlists/$id'
     | '/admin/playlists/new'
+    | '/admin/content'
     | '/admin/playlists'
+    | '/admin/playlists/$id/episodes'
+    | '/admin/playlists/$id/pricing'
+    | '/admin/playlists/$id'
   id:
     | '__root__'
     | '/'
@@ -131,7 +177,11 @@ export interface FileRouteTypes {
     | '/_admin-layout/admin/'
     | '/_admin-layout/admin/playlists/$id'
     | '/_admin-layout/admin/playlists/new'
+    | '/_admin-layout/admin/content/'
     | '/_admin-layout/admin/playlists/'
+    | '/_admin-layout/admin/playlists/$id/episodes'
+    | '/_admin-layout/admin/playlists/$id/pricing'
+    | '/_admin-layout/admin/playlists/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -192,6 +242,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLayoutAdminPlaylistsIndexRouteImport
       parentRoute: typeof AdminLayoutRoute
     }
+    '/_admin-layout/admin/content/': {
+      id: '/_admin-layout/admin/content/'
+      path: '/admin/content'
+      fullPath: '/admin/content/'
+      preLoaderRoute: typeof AdminLayoutAdminContentIndexRouteImport
+      parentRoute: typeof AdminLayoutRoute
+    }
     '/_admin-layout/admin/playlists/new': {
       id: '/_admin-layout/admin/playlists/new'
       path: '/admin/playlists/new'
@@ -206,22 +263,67 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLayoutAdminPlaylistsIdRouteImport
       parentRoute: typeof AdminLayoutRoute
     }
+    '/_admin-layout/admin/playlists/$id/': {
+      id: '/_admin-layout/admin/playlists/$id/'
+      path: '/'
+      fullPath: '/admin/playlists/$id/'
+      preLoaderRoute: typeof AdminLayoutAdminPlaylistsIdIndexRouteImport
+      parentRoute: typeof AdminLayoutAdminPlaylistsIdRoute
+    }
+    '/_admin-layout/admin/playlists/$id/pricing': {
+      id: '/_admin-layout/admin/playlists/$id/pricing'
+      path: '/pricing'
+      fullPath: '/admin/playlists/$id/pricing'
+      preLoaderRoute: typeof AdminLayoutAdminPlaylistsIdPricingRouteImport
+      parentRoute: typeof AdminLayoutAdminPlaylistsIdRoute
+    }
+    '/_admin-layout/admin/playlists/$id/episodes': {
+      id: '/_admin-layout/admin/playlists/$id/episodes'
+      path: '/episodes'
+      fullPath: '/admin/playlists/$id/episodes'
+      preLoaderRoute: typeof AdminLayoutAdminPlaylistsIdEpisodesRouteImport
+      parentRoute: typeof AdminLayoutAdminPlaylistsIdRoute
+    }
   }
 }
+
+interface AdminLayoutAdminPlaylistsIdRouteChildren {
+  AdminLayoutAdminPlaylistsIdEpisodesRoute: typeof AdminLayoutAdminPlaylistsIdEpisodesRoute
+  AdminLayoutAdminPlaylistsIdPricingRoute: typeof AdminLayoutAdminPlaylistsIdPricingRoute
+  AdminLayoutAdminPlaylistsIdIndexRoute: typeof AdminLayoutAdminPlaylistsIdIndexRoute
+}
+
+const AdminLayoutAdminPlaylistsIdRouteChildren: AdminLayoutAdminPlaylistsIdRouteChildren =
+  {
+    AdminLayoutAdminPlaylistsIdEpisodesRoute:
+      AdminLayoutAdminPlaylistsIdEpisodesRoute,
+    AdminLayoutAdminPlaylistsIdPricingRoute:
+      AdminLayoutAdminPlaylistsIdPricingRoute,
+    AdminLayoutAdminPlaylistsIdIndexRoute:
+      AdminLayoutAdminPlaylistsIdIndexRoute,
+  }
+
+const AdminLayoutAdminPlaylistsIdRouteWithChildren =
+  AdminLayoutAdminPlaylistsIdRoute._addFileChildren(
+    AdminLayoutAdminPlaylistsIdRouteChildren,
+  )
 
 interface AdminLayoutRouteChildren {
   AdminLayoutAdminDashboardRoute: typeof AdminLayoutAdminDashboardRoute
   AdminLayoutAdminIndexRoute: typeof AdminLayoutAdminIndexRoute
-  AdminLayoutAdminPlaylistsIdRoute: typeof AdminLayoutAdminPlaylistsIdRoute
+  AdminLayoutAdminPlaylistsIdRoute: typeof AdminLayoutAdminPlaylistsIdRouteWithChildren
   AdminLayoutAdminPlaylistsNewRoute: typeof AdminLayoutAdminPlaylistsNewRoute
+  AdminLayoutAdminContentIndexRoute: typeof AdminLayoutAdminContentIndexRoute
   AdminLayoutAdminPlaylistsIndexRoute: typeof AdminLayoutAdminPlaylistsIndexRoute
 }
 
 const AdminLayoutRouteChildren: AdminLayoutRouteChildren = {
   AdminLayoutAdminDashboardRoute: AdminLayoutAdminDashboardRoute,
   AdminLayoutAdminIndexRoute: AdminLayoutAdminIndexRoute,
-  AdminLayoutAdminPlaylistsIdRoute: AdminLayoutAdminPlaylistsIdRoute,
+  AdminLayoutAdminPlaylistsIdRoute:
+    AdminLayoutAdminPlaylistsIdRouteWithChildren,
   AdminLayoutAdminPlaylistsNewRoute: AdminLayoutAdminPlaylistsNewRoute,
+  AdminLayoutAdminContentIndexRoute: AdminLayoutAdminContentIndexRoute,
   AdminLayoutAdminPlaylistsIndexRoute: AdminLayoutAdminPlaylistsIndexRoute,
 }
 
