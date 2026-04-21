@@ -5,23 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-
-// --- Types ---
-type PricingWindow = {
-  id: string;
-  price: number;
-  currency: string;
-  effectiveFrom: string;
-  effectiveTo: string | null;
-  isActive: boolean;
-};
-
-// Mock data
-const MOCK_PRICING: PricingWindow[] = [
-  { id: "pw-1", price: 199,  currency: "USD", effectiveFrom: "2024-01-01", effectiveTo: null,         isActive: true  },
-  { id: "pw-2", price: 149,  currency: "USD", effectiveFrom: "2023-06-01", effectiveTo: "2023-12-31", isActive: false },
-  { id: "pw-3", price: 99,   currency: "USD", effectiveFrom: "2023-01-01", effectiveTo: "2023-05-31", isActive: false },
-];
+import {
+  usePlaylistPricing,
+  useCreatePlaylistPricing,
+  useUpdatePlaylistPricing,
+} from "@/hooks/playlist/use-playlist-pricing";
+import type { PlaylistPricingWindow } from "@/lib/types/commerce";
 
 const EMPTY_FORM = {
   price: "",
@@ -32,59 +21,32 @@ const EMPTY_FORM = {
 
 export default function PlaylistPricing({ playlistId }: { playlistId: string }) {
   const navigate = useNavigate();
-  const [windows, setWindows] = useState<PricingWindow[]>(MOCK_PRICING);
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState(EMPTY_FORM);
+
+  const { data, isLoading, isError } = usePlaylistPricing(playlistId);
+  const createMutation = useCreatePlaylistPricing(playlistId);
+  const updateMutation = useUpdatePlaylistPricing(playlistId);
+
+  const [showForm, setShowForm]     = useState(false);
+  const [editingId, setEditingId]   = useState<string | null>(null);
+  const [form, setForm]             = useState(EMPTY_FORM);
+
+  const windows     = data?.items ?? [];
+  const activePrice = windows.find((w) => w.isActive);
 
   const set = (field: keyof typeof EMPTY_FORM, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
-  const activePrice = windows.find((w) => w.isActive);
-
-  const handleEdit = (pw: PricingWindow) => {
+  const handleEdit = (pw: PlaylistPricingWindow) => {
     setEditingId(pw.id);
     setForm({
-      price: pw.price.toString(),
-      currency: pw.currency,
-      effectiveFrom: pw.effectiveFrom,
-      effectiveTo: pw.effectiveTo ?? "",
+      price:         pw.price,
+      currency:      pw.currency,
+      effectiveFrom: new Date(pw.effectiveFrom).toISOString().split("T")[0],
+      effectiveTo:   pw.effectiveTo
+        ? new Date(pw.effectiveTo).toISOString().split("T")[0]
+        : "",
     });
     setShowForm(true);
-  };
-
-  const handleDelete = (id: string) => {
-    setWindows((prev) => prev.filter((w) => w.id !== id));
-  };
-
-  const handleSubmit = () => {
-    if (!form.price || !form.effectiveFrom) return;
-
-    if (editingId) {
-      // TODO-Later: swap to orpc.playlist.updatePricing.mutate()
-      setWindows((prev) =>
-        prev.map((w) =>
-          w.id === editingId
-            ? { ...w, price: Number(form.price), currency: form.currency, effectiveFrom: form.effectiveFrom, effectiveTo: form.effectiveTo || null }
-            : w
-        )
-      );
-    } else {
-      // TODO-Later: swap to orpc.playlist.createPricing.mutate()
-      const newWindow: PricingWindow = {
-        id: `pw-${Date.now()}`,
-        price: Number(form.price),
-        currency: form.currency,
-        effectiveFrom: form.effectiveFrom,
-        effectiveTo: form.effectiveTo || null,
-        isActive: false,
-      };
-      setWindows((prev) => [...prev, newWindow]);
-    }
-
-    setForm(EMPTY_FORM);
-    setEditingId(null);
-    setShowForm(false);
   };
 
   const handleCancel = () => {
@@ -92,6 +54,39 @@ export default function PlaylistPricing({ playlistId }: { playlistId: string }) 
     setEditingId(null);
     setShowForm(false);
   };
+
+  const handleSubmit = () => {
+    if (!form.price || !form.effectiveFrom) return;
+
+    const effectiveFrom = new Date(form.effectiveFrom);
+    const effectiveTo   = form.effectiveTo ? new Date(form.effectiveTo) : null;
+
+    if (editingId) {
+      updateMutation.mutate(
+        { id: editingId, patch: { price: form.price, currency: form.currency, effectiveFrom, effectiveTo } },
+        { onSuccess: handleCancel }
+      );
+    } else {
+      createMutation.mutate(
+        { playlistId, price: form.price, currency: form.currency, effectiveFrom, effectiveTo },
+        { onSuccess: handleCancel }
+      );
+    }
+  };
+
+  if (isLoading) return (
+    <div className="rounded-xl border bg-card p-12 text-center text-sm text-muted-foreground">
+      Loading pricing...
+    </div>
+  );
+
+  if (isError) return (
+    <div className="rounded-xl border bg-card p-12 text-center text-sm text-destructive">
+      Failed to load pricing
+    </div>
+  );
+
+  const isPending = createMutation.isPending || updateMutation.isPending;
 
   return (
     <div className="space-y-4">
@@ -105,8 +100,8 @@ export default function PlaylistPricing({ playlistId }: { playlistId: string }) 
           </p>
         </div>
         <Button
-          variant="outline"
-          className="gap-2"
+          type="button"
+          variant="outline" className="gap-2"
           onClick={() => navigate({ to: "/admin/playlists/$id", params: { id: playlistId } })}
         >
           <ArrowLeft size={16} />
@@ -117,64 +112,56 @@ export default function PlaylistPricing({ playlistId }: { playlistId: string }) 
       <div className="grid grid-cols-[1fr_320px] gap-6 items-start">
 
         {/* Left — Pricing Windows Table */}
-        <div className="space-y-4">
-          <div className="rounded-xl border bg-card">
+        <div className="rounded-xl border bg-card">
+          <div className="grid grid-cols-[1fr_80px_1fr_1fr_80px_auto] gap-4 px-6 py-3 border-b text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            <span>Price</span>
+            <span>Currency</span>
+            <span>Effective From</span>
+            <span>Effective To</span>
+            <span>Status</span>
+            <span></span>
+          </div>
 
-            {/* Table Header */}
-            <div className="grid grid-cols-[1fr_80px_1fr_1fr_80px_auto] gap-4 px-6 py-3 border-b text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-              <span>Price</span>
-              <span>Currency</span>
-              <span>Effective From</span>
-              <span>Effective To</span>
-              <span>Status</span>
-              <span></span>
+          {windows.length === 0 ? (
+            <div className="py-16 text-center text-sm text-muted-foreground">
+              No pricing windows yet
             </div>
-
-            {/* Rows */}
-            {windows.map((pw) => (
+          ) : (
+            windows.map((pw) => (
               <div
                 key={pw.id}
                 className="grid grid-cols-[1fr_80px_1fr_1fr_80px_auto] gap-4 items-center px-6 py-4 border-b last:border-0 hover:bg-muted/30 transition-colors"
               >
-                <span className="text-sm font-semibold">
-                  ${pw.price.toFixed(2)}
-                </span>
+                <span className="text-sm font-semibold">${pw.price}</span>
                 <span className="text-sm text-muted-foreground">{pw.currency}</span>
-                <span className="text-sm text-muted-foreground">{pw.effectiveFrom}</span>
-                <span className="text-sm text-muted-foreground">{pw.effectiveTo ?? "—"}</span>
+                <span className="text-sm text-muted-foreground">
+                  {new Date(pw.effectiveFrom).toLocaleDateString()}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {pw.effectiveTo ? new Date(pw.effectiveTo).toLocaleDateString() : "—"}
+                </span>
                 {pw.isActive
                   ? <Badge className="bg-green-100 text-green-600 hover:bg-green-100">Active</Badge>
                   : <Badge variant="secondary">Inactive</Badge>
                 }
                 <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost" size="icon"
-                    onClick={() => handleEdit(pw)}
-                  >
+                  <Button type="button" variant="ghost" size="icon" onClick={() => handleEdit(pw)}>
                     <Pencil size={15} />
-                  </Button>
-                  <Button
-                    variant="ghost" size="icon"
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => handleDelete(pw.id)}
-                    disabled={pw.isActive}
-                  >
-                    <Trash2 size={15} />
                   </Button>
                 </div>
               </div>
-            ))}
+            ))
+          )}
 
-            {/* Footer */}
-            <div className="px-6 py-3 flex justify-end">
-              <Button
-                variant="outline" size="sm" className="gap-2"
-                onClick={() => { setShowForm(true); setEditingId(null); setForm(EMPTY_FORM); }}
-              >
-                <Plus size={14} />
-                Add Pricing Window
-              </Button>
-            </div>
+          <div className="px-6 py-3 flex justify-end">
+            <Button
+              type="button"
+              variant="outline" size="sm" className="gap-2"
+              onClick={() => { setShowForm(true); setEditingId(null); setForm(EMPTY_FORM); }}
+            >
+              <Plus size={14} />
+              Add Pricing Window
+            </Button>
           </div>
         </div>
 
@@ -190,9 +177,9 @@ export default function PlaylistPricing({ playlistId }: { playlistId: string }) 
                   <DollarSign size={22} className="text-primary" />
                 </div>
                 <div>
-                  <p className="text-3xl font-bold">${activePrice.price.toFixed(2)}</p>
+                  <p className="text-3xl font-bold">${activePrice.price}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    Since {activePrice.effectiveFrom}
+                    {activePrice.currency} · Since {new Date(activePrice.effectiveFrom).toLocaleDateString()}
                   </p>
                 </div>
               </div>
@@ -201,21 +188,21 @@ export default function PlaylistPricing({ playlistId }: { playlistId: string }) 
             )}
           </div>
 
-          {/* Add / Edit Form */}
+          {/* Form */}
           {showForm && (
             <div className="rounded-xl border bg-card p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-sm">
                   {editingId ? "Edit Pricing Window" : "New Pricing Window"}
                 </h3>
-                <Button variant="ghost" size="icon" onClick={handleCancel}>
+                <Button type="button" variant="ghost" size="icon" onClick={handleCancel}>
                   <X size={16} />
                 </Button>
               </div>
 
               <div className="space-y-3">
                 <div className="space-y-1.5">
-                  <Label>Price ($)</Label>
+                  <Label>Price</Label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
                     <Input
@@ -258,13 +245,17 @@ export default function PlaylistPricing({ playlistId }: { playlistId: string }) 
                 </div>
               </div>
 
-              <Button className="w-full gap-2" onClick={handleSubmit}>
+              <Button
+                type="button"
+                className="w-full gap-2"
+                disabled={isPending || !form.price || !form.effectiveFrom}
+                onClick={handleSubmit}
+              >
                 <CheckCircle size={16} />
-                {editingId ? "Save Changes" : "Add Pricing Window"}
+                {isPending ? "Saving..." : editingId ? "Save Changes" : "Add Pricing Window"}
               </Button>
             </div>
           )}
-
         </div>
       </div>
     </div>

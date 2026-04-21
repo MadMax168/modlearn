@@ -9,6 +9,9 @@ import {
 	Music,
 	Settings,
 	Users,
+	FolderOpen,
+	Tag,
+	ClipboardList,
 } from "lucide-react";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
@@ -25,9 +28,12 @@ const navItems = [
 			{ label: "Add Playlist", to: "/admin/playlists/new" },
 		],
 	},
-	{ label: "Revenue", icon: DollarSign, to: "/admin/revenue" },
+	{ label: "Files",     icon: FolderOpen, to: "/admin/files" },
+	{ label: "Categories", icon: Tag, to: "/admin/categories" },
+	// { label: "Revenue", icon: DollarSign, to: "/admin/revenue" },
 	{ label: "Analytics", icon: ChartBar, to: "/admin/analytics" },
-	{ label: "Settings", icon: Settings, to: "/admin/settings" },
+	{ label: "Audit Logs", icon: ClipboardList, to: "/admin/audit-logs" },
+	// { label: "Settings", icon: Settings, to: "/admin/settings" },
 ];
 
 export default function AdminSidebar() {

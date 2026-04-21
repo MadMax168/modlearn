@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import AdminHeader from "@/components/admin/admin-header";
 import AdminSidebar from "@/components/admin/admin-sidebar";
 import { authClient } from "@/lib/auth-client";
@@ -7,13 +7,13 @@ export const Route = createFileRoute("/_admin-layout")({
 	beforeLoad: async () => {
 		const session = await authClient.getSession();
 
-		// if (!session.data) {
-		//   redirect({ to: "/login", throw: true });
-		// }
+		if (!session.data) {
+		  redirect({ to: "/login", throw: true });
+		}
 
-		// if (session.data?.user.role !== "admin") {
-		//   redirect({ to: "/dashboard", throw: true });
-		// }
+		if (session.data?.user.role !== "admin" && session.data?.user.role !== "superadmin") {
+		  redirect({ to: "/dashboard", throw: true });
+		}
 
 		return { session };
 	},
