@@ -8,23 +8,6 @@ import { useContents, useDeleteContent } from "@/hooks/content/use-content";
 import type { Content, ContentType } from "@/lib/types/content";
 import { toast } from "sonner";
 
-// ---------------------------------------------------------------------------
-// Mock data — remove when real API is connected
-const MOCK_CONTENTS: Content[] = [
-  {
-    id: "1",
-    title: "Introduction to React",
-    contentType: "SERIES",
-    isPublished: true,
-    isAvailable: true,
-    viewCount: 12450,
-    activePricing: { currency: "THB", price: 299 },
-  },
-];
-
-const MOCK_PAGINATION = { total: MOCK_CONTENTS.length, totalPages: 1 };
-// ---------------------------------------------------------------------------
-
 const TYPE_ICON: Record<ContentType, React.ElementType> = {
   MOVIE:   Film,
   SERIES:  Video,
@@ -45,7 +28,7 @@ function StatusBadge({ content }: { content: Content }) {
   return <Badge className="bg-green-100 text-green-600 hover:bg-green-100">Active</Badge>;
 }
 
-const USE_MOCK = true; // ← flip to false when real API is ready
+const USE_MOCK = false; // ← flip to false when real API is ready
 
 export default function ContentTable() {
   const navigate = useNavigate();
@@ -56,11 +39,11 @@ export default function ContentTable() {
   const apiResult                     = useContents(page, search, filterType);
   const deleteMutation                = useDeleteContent();
 
-  // Use mock or real data
-  const contents   = USE_MOCK ? MOCK_CONTENTS : (apiResult.data?.items ?? []);
-  const totalPages = USE_MOCK ? MOCK_PAGINATION.totalPages : (apiResult.data?.pagination.totalPages ?? 1);
-  const isLoading  = USE_MOCK ? false : apiResult.isLoading;
-  const isError    = USE_MOCK ? false : apiResult.isError;
+
+  const contents   = apiResult.data?.items ?? []
+  const totalPages = apiResult.data?.pagination.totalPages ?? 1
+  const isLoading  = apiResult.isLoading;
+  const isError    = apiResult.isError;
 
   const filteredContents = USE_MOCK
     ? contents.filter((c) => {
@@ -217,7 +200,7 @@ export default function ContentTable() {
 
         <div className="flex items-center justify-between px-6 py-3">
           <span className="text-xs text-muted-foreground">
-            Showing {filteredContents.length} of {USE_MOCK ? MOCK_PAGINATION.total : (apiResult.data?.pagination.total ?? 0)} items
+            Showing {filteredContents.length} of {apiResult.data?.pagination.total ?? 0} items
           </span>
           <div className="flex items-center gap-1">
             <Button type="button" variant="ghost" size="icon" className="h-8 w-8" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>{"<"}</Button>
