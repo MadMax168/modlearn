@@ -8,12 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useCreatePlaylist } from "@/hooks/playlist/use-playlist";
 
-type FormData = {
+interface FormData {
   title: string;
   description: string;
   thumbnailImageId: string;
   isSeries: boolean;
-};
+}
 
 const INITIAL_FORM: FormData = {
   title: "",

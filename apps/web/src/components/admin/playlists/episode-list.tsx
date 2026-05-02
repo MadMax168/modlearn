@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
   GripVertical, Pencil, Trash2, Plus,
-  CheckCircle, ArrowLeft, Video, Search
+  CheckCircle, ArrowLeft, Video,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,7 +33,6 @@ export default function EpisodeList({ playlistId }: { playlistId: string }) {
 
   const episodes = localEpisodes ?? (playlist?.episodes ?? []);
 
-  // --- Drag handlers ---
   const handleDragStart = (id: string) => setDraggingId(id);
 
   const handleDragOver = (e: React.DragEvent, targetId: string) => {
@@ -51,7 +50,6 @@ export default function EpisodeList({ playlistId }: { playlistId: string }) {
 
   const handleDragEnd = () => setDraggingId(null);
 
-  // --- Save order ---
   const handleSaveOrder = () => {
     reorderMutation.mutate(
       { playlistId, episodeIds: episodes.map((ep) => ep.id) },
@@ -64,7 +62,6 @@ export default function EpisodeList({ playlistId }: { playlistId: string }) {
     );
   };
 
-  // --- Remove ---
   const handleRemove = (episodeId: string) => {
     removeMutation.mutate({ id: episodeId });
   };
@@ -116,88 +113,110 @@ export default function EpisodeList({ playlistId }: { playlistId: string }) {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border bg-card">
-        <div className="grid grid-cols-[32px_40px_1fr_80px_100px_auto] gap-4 px-6 py-3 border-b text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-          <span></span>
-          <span>#</span>
-          <span>Title</span>
-          <span>Duration</span>
-          <span>Type</span>
-          <span></span>
-        </div>
-
-        {episodes.length === 0 ? (
-          <div className="py-16 text-center text-sm text-muted-foreground">
-            No episodes yet — add content to this playlist
-          </div>
-        ) : (
-          episodes
-            .slice()
-            .sort((a, b) => a.episodeOrder - b.episodeOrder)
-            .map((ep) => (
-              <div
-                key={ep.id}
-                draggable
-                onDragStart={() => handleDragStart(ep.id)}
-                onDragOver={(e) => handleDragOver(e, ep.id)}
-                onDragEnd={handleDragEnd}
-                className={`grid grid-cols-[32px_40px_1fr_80px_100px_auto] gap-4 items-center px-6 py-4 border-b last:border-0 transition-colors
-                  ${draggingId === ep.id ? "opacity-40 bg-muted" : "hover:bg-muted/30"}`}
-              >
-                <GripVertical size={16} className="text-muted-foreground cursor-grab" />
-
-                <span className="text-sm text-muted-foreground font-mono">
-                  {ep.episodeOrder}
-                </span>
-
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <Video size={14} className="text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">
-                      {ep.title ?? ep.content.title}
-                    </p>
-                    {ep.seasonNumber && (
-                      <p className="text-xs text-muted-foreground">
-                        S{ep.seasonNumber} E{ep.episodeNumber}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                <span className="text-sm text-muted-foreground">
-                  {formatDuration(ep.content.duration)}
-                </span>
-
-                <Badge variant="outline" className="capitalize text-xs w-fit">
-                  {ep.content.contentType.toLowerCase()}
-                </Badge>
-
-                <div className="flex items-center gap-1">
-                  <Button
-                    type="button"
-                    variant="ghost" size="icon"
-                    onClick={() => navigate({ to: "/admin/content/$id", params: { id: ep.content.id } })}
+      <div className="rounded-xl border bg-card overflow-hidden">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b">
+              <th className="w-8 px-6 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide" />
+              <th className="w-10 px-2 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">#</th>
+              <th className="px-2 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Title</th>
+              <th className="w-20 px-2 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Duration</th>
+              <th className="w-24 px-2 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide">Type</th>
+              <th className="px-6 py-3" />
+            </tr>
+          </thead>
+          <tbody>
+            {episodes.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="py-16 text-center text-sm text-muted-foreground">
+                  No episodes yet — add content to this playlist
+                </td>
+              </tr>
+            ) : (
+              episodes
+                .slice()
+                .sort((a, b) => a.episodeOrder - b.episodeOrder)
+                .map((ep) => (
+                  <tr
+                    key={ep.id}
+                    draggable
+                    tabIndex={0}
+                    aria-label={`Episode ${ep.episodeOrder}: ${ep.title ?? ep.content.title}`}
+                    onDragStart={() => handleDragStart(ep.id)}
+                    onDragOver={(e) => handleDragOver(e, ep.id)}
+                    onDragEnd={handleDragEnd}
+                    className={`border-b last:border-0 transition-colors ${
+                      draggingId === ep.id ? "bg-muted opacity-40" : "hover:bg-muted/30"
+                    }`}
                   >
-                    <Pencil size={15} />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost" size="icon"
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                    disabled={removeMutation.isPending}
-                    onClick={() => handleRemove(ep.id)}
-                  >
-                    <Trash2 size={15} />
-                  </Button>
-                </div>
-              </div>
-            ))
-        )}
+                    <td className="px-6 py-4">
+                      <GripVertical size={16} className="text-muted-foreground cursor-grab" />
+                    </td>
 
-        {/* Footer — Add episode */}
-        <div className="px-6 py-3 flex items-center justify-between">
+                    <td className="px-2 py-4">
+                      <span className="text-sm text-muted-foreground font-mono">
+                        {ep.episodeOrder}
+                      </span>
+                    </td>
+
+                    <td className="px-2 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <Video size={14} className="text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">
+                            {ep.title ?? ep.content.title}
+                          </p>
+                          {ep.seasonNumber && (
+                            <p className="text-xs text-muted-foreground">
+                              S{ep.seasonNumber} E{ep.episodeNumber}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className="px-2 py-4">
+                      <span className="text-sm text-muted-foreground">
+                        {formatDuration(ep.content.duration)}
+                      </span>
+                    </td>
+
+                    <td className="px-2 py-4">
+                      <Badge variant="outline" className="capitalize text-xs w-fit">
+                        {ep.content.contentType.toLowerCase()}
+                      </Badge>
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost" size="icon"
+                          onClick={() => navigate({ to: "/admin/content/$id", params: { id: ep.content.id } })}
+                        >
+                          <Pencil size={15} />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost" size="icon"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          disabled={removeMutation.isPending}
+                          onClick={() => handleRemove(ep.id)}
+                        >
+                          <Trash2 size={15} />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+            )}
+          </tbody>
+        </table>
+
+        {/* Footer */}
+        <div className="px-6 py-3 flex items-center justify-between border-t">
           <span className="text-xs text-muted-foreground">
             {episodes.length} episode{episodes.length !== 1 ? "s" : ""}
           </span>

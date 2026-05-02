@@ -9,6 +9,11 @@ type AuditAction     = "CREATE" | "UPDATE" | "DELETE" | "SET_PUBLISH_STATE" |
   "SET_AVAILABILITY" | "SET_CLASSIFICATION" | "ADD_EPISODE" |
   "REORDER_EPISODES" | "UPDATE_EPISODE" | "REMOVE_EPISODE";
 
+// Derive the log item type directly from the hook — avoids implicit `any`
+type AuditLogItem = NonNullable<
+  ReturnType<typeof useAuditLogs>["data"]
+>["items"][number];
+
 const ACTION_COLOR: Record<AuditAction, string> = {
   CREATE:              "bg-green-100 text-green-700",
   UPDATE:              "bg-blue-100 text-blue-700",
@@ -29,11 +34,102 @@ const ACTIONS: AuditAction[] = [
   "REORDER_EPISODES", "UPDATE_EPISODE", "REMOVE_EPISODE",
 ];
 
+function ExpandIcon({ hasMetadata, isExpanded }: { hasMetadata: boolean; isExpanded: boolean }) {
+  if (!hasMetadata) return <span />;
+  if (isExpanded)   return <ChevronDown size={14} className="text-muted-foreground" />;
+  return <ChevronRight size={14} className="text-muted-foreground" />;
+}
+
+function TableBody({
+  isLoading,
+  isError,
+  logs,
+  expandedId,
+  setExpandedId,
+}: {
+  isLoading: boolean;
+  isError: boolean;
+  logs: AuditLogItem[];
+  expandedId: string | null;
+  setExpandedId: (id: string | null) => void;
+}) {
+  if (isLoading) {
+    return <div className="py-16 text-center text-sm text-muted-foreground">Loading logs...</div>;
+  }
+
+  if (isError) {
+    return <div className="py-16 text-center text-sm text-destructive">Failed to load logs</div>;
+  }
+
+  if (logs.length === 0) {
+    return <div className="py-16 text-center text-sm text-muted-foreground">No audit logs found</div>;
+  }
+
+  return (
+    <>
+      {logs.map((log) => (
+        <div key={log.id}>
+          <button
+            type="button"
+            className="grid w-full grid-cols-[1fr_120px_120px_140px_32px] items-center gap-4 border-b px-6 py-4 text-left transition-colors hover:bg-muted/30 cursor-pointer"
+            onClick={() => setExpandedId(expandedId === log.id ? null : log.id)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setExpandedId(expandedId === log.id ? null : log.id);
+              }
+            }}
+          >
+            {/* Admin */}
+            <div>
+              <p className="text-sm font-medium">{log.admin.name}</p>
+              <p className="text-xs text-muted-foreground">{log.admin.email}</p>
+            </div>
+
+            {/* Entity */}
+            <Badge variant="outline" className="text-xs w-fit capitalize">
+              {log.entityType.replace("_", " ").toLowerCase()}
+            </Badge>
+
+            {/* Action */}
+            <Badge className={`text-xs w-fit ${ACTION_COLOR[log.action as AuditAction]}`}>
+              {log.action.replace(/_/g, " ")}
+            </Badge>
+
+            {/* Time */}
+            <span className="text-xs text-muted-foreground">
+              {new Date(log.createdAt).toLocaleString()}
+            </span>
+
+            {/* Expand toggle */}
+            <ExpandIcon hasMetadata={!!log.metadata} isExpanded={expandedId === log.id} />
+          </button>
+
+          {/* Metadata JSON viewer */}
+          {expandedId === log.id && log.metadata && (
+            <div className="px-6 py-4 bg-muted/20 border-b">
+              <p className="text-xs font-semibold text-muted-foreground mb-2">METADATA</p>
+              <pre className="text-xs bg-muted rounded-lg p-4 overflow-x-auto">
+                {JSON.stringify(log.metadata, null, 2)}
+              </pre>
+              {log.ipAddress && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  IP: {log.ipAddress}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      ))}
+    </>
+  );
+}
+
 export default function AuditLogTable() {
-  const [page, setPage]               = useState(1);
-  const [entityType, setEntityType]   = useState<AuditEntityType | undefined>();
-  const [action, setAction]           = useState<AuditAction | undefined>();
-  const [expandedId, setExpandedId]   = useState<string | null>(null);
+  const [page, setPage]             = useState(1);
+  const [entityType, setEntityType] = useState<AuditEntityType | undefined>();
+  const [action, setAction]         = useState<AuditAction | undefined>();
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const { data, isLoading, isError } = useAuditLogs(page, entityType, action);
 
@@ -96,71 +192,16 @@ export default function AuditLogTable() {
           <span>Entity</span>
           <span>Action</span>
           <span>Time</span>
-          <span></span>
+          <span />
         </div>
 
-        {isLoading ? (
-          <div className="py-16 text-center text-sm text-muted-foreground">Loading logs...</div>
-        ) : isError ? (
-          <div className="py-16 text-center text-sm text-destructive">Failed to load logs</div>
-        ) : logs.length === 0 ? (
-          <div className="py-16 text-center text-sm text-muted-foreground">No audit logs found</div>
-        ) : (
-          logs.map((log) => (
-            <div key={log.id}>
-              <div
-                className="grid grid-cols-[1fr_120px_120px_140px_32px] gap-4 items-center px-6 py-4 border-b hover:bg-muted/30 transition-colors cursor-pointer"
-                onClick={() => setExpandedId(expandedId === log.id ? null : log.id)}
-              >
-                {/* Admin */}
-                <div>
-                  <p className="text-sm font-medium">{log.admin.name}</p>
-                  <p className="text-xs text-muted-foreground">{log.admin.email}</p>
-                </div>
-
-                {/* Entity */}
-                <Badge variant="outline" className="text-xs w-fit capitalize">
-                  {log.entityType.replace("_", " ").toLowerCase()}
-                </Badge>
-
-                {/* Action */}
-                <Badge
-                  className={`text-xs w-fit ${ACTION_COLOR[log.action]} hover:${ACTION_COLOR[log.action]}`}
-                >
-                  {log.action.replace(/_/g, " ")}
-                </Badge>
-
-                {/* Time */}
-                <span className="text-xs text-muted-foreground">
-                  {new Date(log.createdAt).toLocaleString()}
-                </span>
-
-                {/* Expand toggle */}
-                {log.metadata
-                  ? expandedId === log.id
-                    ? <ChevronDown size={14} className="text-muted-foreground" />
-                    : <ChevronRight size={14} className="text-muted-foreground" />
-                  : <span />
-                }
-              </div>
-
-              {/* Metadata JSON viewer */}
-              {expandedId === log.id && log.metadata && (
-                <div className="px-6 py-4 bg-muted/20 border-b">
-                  <p className="text-xs font-semibold text-muted-foreground mb-2">METADATA</p>
-                  <pre className="text-xs bg-muted rounded-lg p-4 overflow-x-auto">
-                    {JSON.stringify(log.metadata, null, 2)}
-                  </pre>
-                  {log.ipAddress && (
-                    <p className="text-xs text-muted-foreground mt-2">
-                      IP: {log.ipAddress}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-          ))
-        )}
+        <TableBody
+          isLoading={isLoading}
+          isError={isError}
+          logs={logs}
+          expandedId={expandedId}
+          setExpandedId={setExpandedId}
+        />
 
         {/* Pagination */}
         <div className="flex items-center justify-between px-6 py-3">

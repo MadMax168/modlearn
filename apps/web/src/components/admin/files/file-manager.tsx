@@ -1,19 +1,19 @@
 import { useRef, useState } from "react";
 import {
   Upload, Copy, Trash2, FileVideo,
-  FileAudio, FileImage, File, CheckCircle, X
+  FileAudio, FileImage, File, CheckCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUploadFile, useDeleteFile, useGetDownloadUrl } from "@/hooks/file/use-file";
 import { toast } from "sonner";
 
-type UploadedFile = {
-  fileId:    string;
-  name:      string;
-  size:      number;
-  mimeType:  string;
+interface UploadedFile {
+  fileId:     string;
+  name:       string;
+  size:       number;
+  mimeType:   string;
   uploadedAt: Date;
-};
+}
 
 function FileIcon({ mimeType }: { mimeType: string }) {
   if (mimeType.startsWith("video/"))  return <FileVideo  size={16} className="text-blue-500" />;
@@ -37,7 +37,6 @@ export default function FileManager() {
   const deleteMutation        = useDeleteFile();
   const downloadMutation      = useGetDownloadUrl();
 
-  // --- Upload handler ---
   const handleUpload = async (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
 
@@ -45,13 +44,7 @@ export default function FileManager() {
       try {
         const fileId = await upload(file);
         setFiles((prev) => [
-          {
-            fileId,
-            name:      file.name,
-            size:      file.size,
-            mimeType:  file.type,
-            uploadedAt: new Date(),
-          },
+          { fileId, name: file.name, size: file.size, mimeType: file.type, uploadedAt: new Date() },
           ...prev,
         ]);
         toast.success(`Uploaded: ${file.name}`);
@@ -61,13 +54,11 @@ export default function FileManager() {
     }
   };
 
-  // --- Copy fileId ---
   const handleCopy = (fileId: string) => {
     navigator.clipboard.writeText(fileId);
     toast.success("File ID copied to clipboard");
   };
 
-  // --- Get download URL ---
   const handleDownload = async (fileId: string) => {
     try {
       const { downloadUrl } = await downloadMutation.mutateAsync({ fileId });
@@ -77,7 +68,6 @@ export default function FileManager() {
     }
   };
 
-  // --- Delete ---
   const handleDelete = (fileId: string) => {
     deleteMutation.mutate(
       { fileId },
@@ -91,7 +81,6 @@ export default function FileManager() {
     );
   };
 
-  // --- Drag & Drop ---
   const handleDragOver  = (e: React.DragEvent) => { e.preventDefault(); setDragging(true); };
   const handleDragLeave = () => setDragging(false);
   const handleDrop      = (e: React.DragEvent) => {
@@ -100,20 +89,23 @@ export default function FileManager() {
     handleUpload(e.dataTransfer.files);
   };
 
+  const dropZoneClass = [
+    "rounded-xl border-2 border-dashed p-12 flex flex-col items-center justify-center gap-3 cursor-pointer transition-colors w-full text-center",
+    dragging
+      ? "border-primary bg-primary/5"
+      : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30",
+  ].join(" ");
+
   return (
     <div className="space-y-4">
 
-      {/* Drop Zone */}
-      <div
+      {/* Drop Zone — using <label> so it's semantically interactive */}
+      <button
+        type="button"
+        className={dropZoneClass}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        onClick={() => inputRef.current?.click()}
-        className={`rounded-xl border-2 border-dashed p-12 flex flex-col items-center justify-center gap-3 cursor-pointer transition-colors
-          ${dragging
-            ? "border-primary bg-primary/5"
-            : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30"
-          }`}
       >
         <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
           <Upload size={22} className="text-primary" />
@@ -128,22 +120,23 @@ export default function FileManager() {
         </div>
         <input
           ref={inputRef}
+          id="file-upload"
           type="file"
           multiple
           className="hidden"
           onChange={(e) => handleUpload(e.target.files)}
         />
-      </div>
+      </button>
 
       {/* File List */}
       {files.length > 0 && (
         <div className="rounded-xl border bg-card">
           <div className="grid grid-cols-[32px_1fr_80px_120px_auto] gap-4 px-6 py-3 border-b text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            <span></span>
+            <span />
             <span>File</span>
             <span>Size</span>
             <span>File ID</span>
-            <span></span>
+            <span />
           </div>
 
           {files.map((f) => (
@@ -151,10 +144,8 @@ export default function FileManager() {
               key={f.fileId}
               className="grid grid-cols-[32px_1fr_80px_120px_auto] gap-4 items-center px-6 py-4 border-b last:border-0 hover:bg-muted/30 transition-colors"
             >
-              {/* Icon */}
               <FileIcon mimeType={f.mimeType} />
 
-              {/* Name + time */}
               <div>
                 <p className="text-sm font-medium truncate max-w-xs">{f.name}</p>
                 <p className="text-xs text-muted-foreground">
@@ -162,32 +153,19 @@ export default function FileManager() {
                 </p>
               </div>
 
-              {/* Size */}
               <span className="text-sm text-muted-foreground">
                 {formatSize(f.size)}
               </span>
 
-              {/* File ID — truncated */}
               <code className="text-xs text-muted-foreground truncate max-w-[120px] block">
                 {f.fileId.slice(0, 8)}...
               </code>
 
-              {/* Actions */}
               <div className="flex items-center gap-1">
-                <Button
-                  type="button"
-                  variant="ghost" size="icon"
-                  title="Copy File ID"
-                  onClick={() => handleCopy(f.fileId)}
-                >
+                <Button type="button" variant="ghost" size="icon" title="Copy File ID" onClick={() => handleCopy(f.fileId)}>
                   <Copy size={15} />
                 </Button>
-                <Button
-                  type="button"
-                  variant="ghost" size="icon"
-                  title="Download"
-                  onClick={() => handleDownload(f.fileId)}
-                >
+                <Button type="button" variant="ghost" size="icon" title="Download" onClick={() => handleDownload(f.fileId)}>
                   <CheckCircle size={15} />
                 </Button>
                 <Button
@@ -216,7 +194,6 @@ export default function FileManager() {
           </p>
         </div>
       )}
-
     </div>
   );
 }

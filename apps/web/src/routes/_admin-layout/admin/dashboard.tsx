@@ -210,8 +210,9 @@ function AdminDashboardPage() {
               { icon: ClipboardList, label: "Audit Logs",   sub: "View recent admin activity",     to: "/admin/audit-logs"    },
             ].map((action) => (
               <button
+                type="button"
                 key={action.label}
-                onClick={() => navigate({ to: action.to as any })}
+                onClick={() => navigate({ to: action.to })}
                 className="flex items-center gap-3 rounded-lg border p-4 hover:bg-muted/30 transition-colors text-left"
               >
                 <action.icon size={18} className="text-primary shrink-0" />

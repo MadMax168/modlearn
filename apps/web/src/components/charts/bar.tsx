@@ -235,6 +235,7 @@ export function Bar({
 
   return (
     <g className={`bar-series-${uniqueId}`}>
+      {/* biome-ignore lint/complexity/noExcessiveCognitiveComplexity: chart library internals */}
       {data.map((d, i) => {
         const value = d[dataKey];
         if (typeof value !== "number") {

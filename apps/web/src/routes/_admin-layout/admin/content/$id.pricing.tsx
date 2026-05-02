@@ -12,12 +12,13 @@ function ContentPricingPage() {
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <span>Content</span>
         <span>{">"}</span>
-        <span
+        <button
+          type="button"
           className="hover:text-foreground cursor-pointer"
           onClick={() => history.back()}
         >
           Edit Content
-        </span>
+        </button>
         <span>{">"}</span>
         <span className="text-primary font-medium">Pricing</span>
       </div>

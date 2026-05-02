@@ -200,6 +200,7 @@ function ChartInner({
   const bandWidth = barWidthProp ?? categoryScale.bandwidth();
 
   // Compute max value considering stacking
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: chart library internals
   const maxValue = useMemo(() => {
     if (stacked) {
       // For stacked bars, sum all values at each data point
@@ -304,6 +305,7 @@ function ChartInner({
 
   // Mouse move handler
   const handleMouseMove = useCallback(
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: chart library internals
     (event: React.MouseEvent<SVGGElement>) => {
       const point = localPoint(event);
       if (!point) {

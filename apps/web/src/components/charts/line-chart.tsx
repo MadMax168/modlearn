@@ -348,6 +348,7 @@ export function LineChart({
 }
 
 // Re-export Line for convenience
+// biome-ignore lint/performance/noBarrelFile: convenience re-export
 export { Line, type LineProps } from "./line";
 
 export default LineChart;

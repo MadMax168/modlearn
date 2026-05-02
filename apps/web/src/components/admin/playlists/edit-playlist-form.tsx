@@ -14,20 +14,20 @@ import {
   useSetAvailability,
 } from "@/hooks/playlist/use-playlist";
 
-type FormData = {
+interface FormData {
   title: string;
   description: string;
   thumbnailImageId: string;
   isSeries: boolean;
-};
+}
 
 export default function EditPlaylistForm({ id }: { id: string }) {
   const navigate = useNavigate();
   const { data: playlist, isLoading, isError } = usePlaylist(id);
 
-  const updateMutation      = useUpdatePlaylist(id);
-  const deleteMutation      = useDeletePlaylist();
-  const publishMutation     = useSetPublishState(id);
+  const updateMutation       = useUpdatePlaylist(id);
+  const deleteMutation       = useDeletePlaylist();
+  const publishMutation      = useSetPublishState(id);
   const availabilityMutation = useSetAvailability(id);
 
   const [form, setForm] = useState<FormData>({
@@ -40,10 +40,10 @@ export default function EditPlaylistForm({ id }: { id: string }) {
   useEffect(() => {
     if (playlist) {
       setForm({
-        title: playlist.title,
-        description: playlist.description ?? "",
+        title:            playlist.title,
+        description:      playlist.description ?? "",
         thumbnailImageId: playlist.thumbnailImageId ?? "",
-        isSeries: playlist.isSeries,
+        isSeries:         playlist.isSeries,
       });
     }
   }, [playlist]);
@@ -55,10 +55,10 @@ export default function EditPlaylistForm({ id }: { id: string }) {
     updateMutation.mutate({
       id,
       patch: {
-        title: form.title,
-        description: form.description || null,
+        title:            form.title,
+        description:      form.description || null,
         thumbnailImageId: form.thumbnailImageId || null,
-        isSeries: form.isSeries,
+        isSeries:         form.isSeries,
       },
     });
   };
@@ -186,7 +186,6 @@ export default function EditPlaylistForm({ id }: { id: string }) {
         <div className="rounded-xl border bg-card p-5 space-y-4">
           <h3 className="font-semibold text-sm">Status</h3>
 
-          {/* Published toggle */}
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium">Published</p>
@@ -195,13 +194,10 @@ export default function EditPlaylistForm({ id }: { id: string }) {
             <Switch
               checked={playlist.isPublished}
               disabled={publishMutation.isPending}
-              onCheckedChange={(v) =>
-                publishMutation.mutate({ id, isPublished: v })
-              }
+              onCheckedChange={(v) => publishMutation.mutate({ id, isPublished: v })}
             />
           </div>
 
-          {/* Available toggle */}
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium">Available</p>
@@ -210,25 +206,18 @@ export default function EditPlaylistForm({ id }: { id: string }) {
             <Switch
               checked={playlist.isAvailable}
               disabled={availabilityMutation.isPending}
-              onCheckedChange={(v) =>
-                availabilityMutation.mutate({ id, isAvailable: v })
-              }
+              onCheckedChange={(v) => availabilityMutation.mutate({ id, isAvailable: v })}
             />
           </div>
 
-          {/* Metadata */}
           <div className="pt-2 border-t space-y-2">
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Created</span>
-              <span className="font-medium">
-                {new Date(playlist.createdAt).toLocaleDateString()}
-              </span>
+              <span className="font-medium">{new Date(playlist.createdAt).toLocaleDateString()}</span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-muted-foreground">Updated</span>
-              <span className="font-medium">
-                {new Date(playlist.updatedAt).toLocaleDateString()}
-              </span>
+              <span className="font-medium">{new Date(playlist.updatedAt).toLocaleDateString()}</span>
             </div>
           </div>
         </div>

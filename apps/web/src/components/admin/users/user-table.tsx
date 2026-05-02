@@ -11,12 +11,6 @@ import { useUsers, useSetUserRole, useBanUser, useUnbanUser } from "@/hooks/user
 import { toast } from "sonner";
 import { useRouteContext } from "@tanstack/react-router";
 
-const ROLE_COLOR: Record<string, string> = {
-  admin:      "bg-purple-100 text-purple-700",
-  superadmin: "bg-red-100 text-red-700",
-  user:       "bg-gray-100 text-gray-600",
-};
-
 const PAGE_SIZE = 10;
 
 export default function UserTable() {

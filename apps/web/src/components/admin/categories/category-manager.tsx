@@ -15,12 +15,98 @@ import { toast } from "sonner";
 
 const EMPTY_FORM = { title: "", slug: "", description: "" };
 
+function getButtonLabel(isPending: boolean, editingId: string | null): string {
+  if (isPending) return "Saving...";
+  if (editingId) return "Save Changes";
+  return "Create Category";
+}
+
+function CategoryTableBody({
+  isLoading,
+  isError,
+  categories,
+  deleteMutation,
+  onEdit,
+  onDelete,
+}: {
+  isLoading: boolean;
+  isError: boolean;
+  categories: Category[];
+  deleteMutation: { isPending: boolean };
+  onEdit: (cat: Category) => void;
+  onDelete: (id: string, title: string) => void;
+}) {
+  if (isLoading) {
+    return (
+      <div className="py-16 text-center text-sm text-muted-foreground">
+        Loading categories...
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="py-16 text-center text-sm text-destructive">
+        Failed to load categories
+      </div>
+    );
+  }
+
+  if (categories.length === 0) {
+    return (
+      <div className="py-16 text-center text-sm text-muted-foreground">
+        No categories found
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {categories.map((cat) => (
+        <div
+          key={cat.id}
+          className="grid grid-cols-[1fr_1fr_auto] gap-4 items-center px-6 py-4 border-b last:border-0 hover:bg-muted/30 transition-colors"
+        >
+          <div>
+            <p className="text-sm font-medium">{cat.title}</p>
+            {cat.description && (
+              <p className="text-xs text-muted-foreground truncate max-w-xs">
+                {cat.description}
+              </p>
+            )}
+          </div>
+
+          <code className="text-xs text-muted-foreground">{cat.slug}</code>
+
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost" size="icon"
+              onClick={() => onEdit(cat)}
+            >
+              <Pencil size={15} />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost" size="icon"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              disabled={deleteMutation.isPending}
+              onClick={() => onDelete(cat.id, cat.title)}
+            >
+              <Trash2 size={15} />
+            </Button>
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
 export default function CategoryManager() {
-  const [page, setPage]         = useState(1);
-  const [search, setSearch]     = useState("");
-  const [showForm, setShowForm] = useState(false);
+  const [page, setPage]           = useState(1);
+  const [search, setSearch]       = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm]         = useState(EMPTY_FORM);
+  const [form, setForm]           = useState(EMPTY_FORM);
 
   const { data, isLoading, isError } = useCategories(page, search);
   const createMutation = useCreateCategory();
@@ -40,13 +126,11 @@ export default function CategoryManager() {
       slug:        cat.slug ?? "",
       description: cat.description ?? "",
     });
-    setShowForm(true);
   };
 
   const handleCancel = () => {
     setForm(EMPTY_FORM);
     setEditingId(null);
-    setShowForm(false);
   };
 
   const handleSubmit = () => {
@@ -116,59 +200,17 @@ export default function CategoryManager() {
           <div className="grid grid-cols-[1fr_1fr_auto] gap-4 px-6 py-3 border-b text-xs font-semibold text-muted-foreground uppercase tracking-wide">
             <span>Title</span>
             <span>Slug</span>
-            <span></span>
+            <span />
           </div>
 
-          {isLoading ? (
-            <div className="py-16 text-center text-sm text-muted-foreground">
-              Loading categories...
-            </div>
-          ) : isError ? (
-            <div className="py-16 text-center text-sm text-destructive">
-              Failed to load categories
-            </div>
-          ) : categories.length === 0 ? (
-            <div className="py-16 text-center text-sm text-muted-foreground">
-              No categories found
-            </div>
-          ) : (
-            categories.map((cat) => (
-              <div
-                key={cat.id}
-                className="grid grid-cols-[1fr_1fr_auto] gap-4 items-center px-6 py-4 border-b last:border-0 hover:bg-muted/30 transition-colors"
-              >
-                <div>
-                  <p className="text-sm font-medium">{cat.title}</p>
-                  {cat.description && (
-                    <p className="text-xs text-muted-foreground truncate max-w-xs">
-                      {cat.description}
-                    </p>
-                  )}
-                </div>
-
-                <code className="text-xs text-muted-foreground">{cat.slug}</code>
-
-                <div className="flex items-center gap-1">
-                  <Button
-                    type="button"
-                    variant="ghost" size="icon"
-                    onClick={() => handleEdit(cat)}
-                  >
-                    <Pencil size={15} />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost" size="icon"
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                    disabled={deleteMutation.isPending}
-                    onClick={() => handleDelete(cat.id, cat.title)}
-                  >
-                    <Trash2 size={15} />
-                  </Button>
-                </div>
-              </div>
-            ))
-          )}
+          <CategoryTableBody
+            isLoading={isLoading}
+            isError={isError}
+            categories={categories}
+            deleteMutation={deleteMutation}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
 
           {/* Pagination */}
           <div className="flex items-center justify-between px-6 py-3">
@@ -178,7 +220,7 @@ export default function CategoryManager() {
             <div className="flex items-center gap-1">
               <Button type="button" variant="ghost" size="icon" className="h-8 w-8" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>{"<"}</Button>
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                <Button key={p} variant={p === page ? "default" : "ghost"} size="icon" className="h-8 w-8 text-xs" onClick={() => setPage(p)}>{p}</Button>
+                <Button type="button" key={p} variant={p === page ? "default" : "ghost"} size="icon" className="h-8 w-8 text-xs" onClick={() => setPage(p)}>{p}</Button>
               ))}
               <Button type="button" variant="ghost" size="icon" className="h-8 w-8" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>{">"}</Button>
             </div>
@@ -207,7 +249,6 @@ export default function CategoryManager() {
               value={form.title}
               onChange={(e) => {
                 set("title", e.target.value);
-                // auto-generate slug from "title" if didn't fix slug
                 if (!editingId) {
                   set("slug", e.target.value.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""));
                 }
@@ -245,14 +286,14 @@ export default function CategoryManager() {
           onClick={handleSubmit}
         >
           <CheckCircle size={16} />
-          {isPending ? "Saving..." : editingId ? "Save Changes" : "Create Category"}
+          {getButtonLabel(isPending, editingId)}
         </Button>
 
         {!editingId && (
           <Button
             type="button"
             variant="outline" className="w-full gap-2"
-            onClick={() => setShowForm(false)}
+            onClick={handleCancel}
           >
             <Plus size={16} />
             The form is always visible — just fill and submit

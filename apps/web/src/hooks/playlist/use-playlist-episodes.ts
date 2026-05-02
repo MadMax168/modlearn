@@ -2,6 +2,17 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { orpc } from "@/utils/orpc";
 import { playlistKeys } from "./use-playlists";
 
+interface PlaylistEpisode {
+  id: string;
+  episodeOrder: number;
+  [key: string]: unknown;
+}
+
+interface PlaylistData {
+  episodes?: PlaylistEpisode[];
+  [key: string]: unknown;
+}
+
 export function useAddEpisode(playlistId: string) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -29,10 +40,10 @@ export function useReorderEpisodes(playlistId: string) {
     onMutate: async (variables) => {
       await queryClient.cancelQueries({ queryKey: playlistKeys.detail(playlistId) });
       const previous = queryClient.getQueryData(playlistKeys.detail(playlistId));
-      queryClient.setQueryData(playlistKeys.detail(playlistId), (old: any) => {
+      queryClient.setQueryData(playlistKeys.detail(playlistId), (old: PlaylistData) => {
         if (!old?.episodes) return old;
         const reordered = variables.episodeIds.map((epId, index) => {
-          const ep = old.episodes.find((e: any) => e.id === epId);
+          const ep = old.episodes?.find((e: PlaylistEpisode) => e.id === epId);
           return { ...ep, episodeOrder: index + 1 };
         });
         return { ...old, episodes: reordered };

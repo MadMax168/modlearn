@@ -84,6 +84,7 @@ export default function ContentPricing({ contentId }: { contentId: string }) {
   );
 
   const isPending = createMutation.isPending || updateMutation.isPending;
+  const buttonLabel = editingId ? "Save Changes" : "Add Pricing Window";
 
   return (
     <div className="space-y-4">
@@ -191,7 +192,7 @@ export default function ContentPricing({ contentId }: { contentId: string }) {
               </div>
               <Button type="button" className="w-full gap-2" disabled={isPending || !form.price || !form.effectiveFrom} onClick={handleSubmit}>
                 <CheckCircle size={16} />
-                {isPending ? "Saving..." : editingId ? "Save Changes" : "Add Pricing Window"}
+                {isPending ? "Saving..." : buttonLabel}
               </Button>
             </div>
           )}

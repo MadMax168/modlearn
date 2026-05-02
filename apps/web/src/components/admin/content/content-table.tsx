@@ -8,6 +8,23 @@ import { useContents, useDeleteContent } from "@/hooks/content/use-content";
 import type { Content, ContentType } from "@/lib/types/content";
 import { toast } from "sonner";
 
+// ---------------------------------------------------------------------------
+// Mock data — remove when real API is connected
+const MOCK_CONTENTS: Content[] = [
+  {
+    id: "1",
+    title: "Introduction to React",
+    contentType: "SERIES",
+    isPublished: true,
+    isAvailable: true,
+    viewCount: 12450,
+    activePricing: { currency: "THB", price: 299 },
+  },
+];
+
+const MOCK_PAGINATION = { total: MOCK_CONTENTS.length, totalPages: 1 };
+// ---------------------------------------------------------------------------
+
 const TYPE_ICON: Record<ContentType, React.ElementType> = {
   MOVIE:   Film,
   SERIES:  Video,
@@ -28,17 +45,30 @@ function StatusBadge({ content }: { content: Content }) {
   return <Badge className="bg-green-100 text-green-600 hover:bg-green-100">Active</Badge>;
 }
 
+const USE_MOCK = true; // ← flip to false when real API is ready
+
 export default function ContentTable() {
   const navigate = useNavigate();
   const [search, setSearch]           = useState("");
   const [page, setPage]               = useState(1);
   const [filterType, setFilterType]   = useState<ContentType | undefined>();
 
-  const { data, isLoading, isError }  = useContents(page, search, filterType);
+  const apiResult                     = useContents(page, search, filterType);
   const deleteMutation                = useDeleteContent();
 
-  const contents   = data?.items ?? [];
-  const totalPages = data?.pagination.totalPages ?? 1;
+  // Use mock or real data
+  const contents   = USE_MOCK ? MOCK_CONTENTS : (apiResult.data?.items ?? []);
+  const totalPages = USE_MOCK ? MOCK_PAGINATION.totalPages : (apiResult.data?.pagination.totalPages ?? 1);
+  const isLoading  = USE_MOCK ? false : apiResult.isLoading;
+  const isError    = USE_MOCK ? false : apiResult.isError;
+
+  const filteredContents = USE_MOCK
+    ? contents.filter((c) => {
+        const matchSearch = c.title.toLowerCase().includes(search.toLowerCase());
+        const matchType   = filterType ? c.contentType === filterType : true;
+        return matchSearch && matchType;
+      })
+    : contents;
 
   const handleDelete = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -81,6 +111,7 @@ export default function ContentTable() {
         <div className="flex items-center gap-1 rounded-lg border p-1">
           {([undefined, "MOVIE", "SERIES", "EPISODE", "MUSIC"] as const).map((t) => (
             <button
+              type="button"
               key={t ?? "all"}
               onClick={() => { setFilterType(t); setPage(1); }}
               className={`px-3 py-1 rounded-md text-xs font-medium capitalize transition-colors
@@ -111,50 +142,57 @@ export default function ContentTable() {
           <span>Published</span>
           <span>Available</span>
           <span>Price</span>
-          <span></span>
+          <span />
         </div>
 
-        {contents.length === 0 ? (
+        {filteredContents.length === 0 ? (
           <div className="py-16 text-center text-sm text-muted-foreground">
             No content found
           </div>
         ) : (
-          contents.map((c) => {
+          filteredContents.map((c) => {
             const Icon = TYPE_ICON[c.contentType];
             return (
               <div
                 key={c.id}
-                onClick={() => navigate({ to: "/admin/content/$id", params: { id: c.id } })}
-                className="grid grid-cols-[2.5fr_100px_80px_80px_100px_auto] gap-4 items-center px-6 py-4 border-b last:border-0 hover:bg-muted/30 transition-colors cursor-pointer"
+                className="grid grid-cols-[2.5fr_100px_80px_80px_100px_auto] items-center gap-4 border-b px-6 py-4 transition-colors last:border-0 hover:bg-muted/30"
               >
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${TYPE_COLOR[c.contentType]}`}>
-                    <Icon size={14} />
+                {/* Clickable row area — semantic button */}
+                <button
+                  type="button"
+                  className="col-span-5 grid grid-cols-subgrid items-center gap-4 text-left"
+                  onClick={() => navigate({ to: "/admin/content/$id", params: { id: c.id } })}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${TYPE_COLOR[c.contentType]}`}>
+                      <Icon size={14} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">{c.title}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {c.viewCount.toLocaleString()} views
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium">{c.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {c.viewCount.toLocaleString()} views
-                    </p>
-                  </div>
-                </div>
 
-                <Badge variant="outline" className="capitalize text-xs w-fit">
-                  {c.contentType.toLowerCase()}
-                </Badge>
+                  <Badge variant="outline" className="capitalize text-xs w-fit">
+                    {c.contentType.toLowerCase()}
+                  </Badge>
 
-                {c.isPublished
-                  ? <Eye size={16} className="text-green-500" />
-                  : <EyeOff size={16} className="text-muted-foreground" />
-                }
+                  {c.isPublished
+                    ? <Eye size={16} className="text-green-500" />
+                    : <EyeOff size={16} className="text-muted-foreground" />
+                  }
 
-                <StatusBadge content={c} />
+                  <StatusBadge content={c} />
 
-                <span className="text-sm text-muted-foreground">
-                  {c.activePricing ? `${c.activePricing.currency} ${c.activePricing.price}` : "Free"}
-                </span>
+                  <span className="text-sm text-muted-foreground">
+                    {c.activePricing ? `${c.activePricing.currency} ${c.activePricing.price}` : "Free"}
+                  </span>
+                </button>
 
-                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                {/* Action buttons — separate from the row click */}
+                <div className="flex items-center gap-1">
                   <Button
                     type="button"
                     variant="ghost" size="icon"
@@ -179,12 +217,12 @@ export default function ContentTable() {
 
         <div className="flex items-center justify-between px-6 py-3">
           <span className="text-xs text-muted-foreground">
-            Showing {contents.length} of {data?.pagination.total ?? 0} items
+            Showing {filteredContents.length} of {USE_MOCK ? MOCK_PAGINATION.total : (apiResult.data?.pagination.total ?? 0)} items
           </span>
           <div className="flex items-center gap-1">
             <Button type="button" variant="ghost" size="icon" className="h-8 w-8" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>{"<"}</Button>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-              <Button key={p} variant={p === page ? "default" : "ghost"} size="icon" className="h-8 w-8 text-xs" onClick={() => setPage(p)}>{p}</Button>
+              <Button type="button" key={p} variant={p === page ? "default" : "ghost"} size="icon" className="h-8 w-8 text-xs" onClick={() => setPage(p)}>{p}</Button>
             ))}
             <Button type="button" variant="ghost" size="icon" className="h-8 w-8" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>{">"}</Button>
           </div>

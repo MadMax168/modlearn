@@ -19,7 +19,7 @@ import { useCategories } from "@/hooks/category/use-categories";
 import { toast } from "sonner";
 import type { ContentType } from "@/lib/types/content";
 
-type FormData = {
+interface FormData {
   title:            string;
   description:      string;
   thumbnailImageId: string;
@@ -27,7 +27,7 @@ type FormData = {
   duration:         string;
   releaseDate:      string;
   contentType:      ContentType;
-};
+}
 
 const INITIAL_FORM: FormData = {
   title:            "",
@@ -41,24 +41,29 @@ const INITIAL_FORM: FormData = {
 
 const CONTENT_TYPES: ContentType[] = ["MOVIE", "SERIES", "EPISODE", "MUSIC"];
 
+function getSaveButtonLabel(isPending: boolean, isEdit: boolean): string {
+  if (isPending) return "Saving...";
+  if (isEdit)    return "Save Changes";
+  return "Create Content";
+}
+
 export default function ContentForm({ id }: { id?: string }) {
-  const navigate   = useNavigate();
-  const isEdit     = !!id;
+  const navigate = useNavigate();
+  const isEdit   = !!id;
 
   const { data: content, isLoading } = useContent(id ?? "");
   const { data: categoriesData }     = useCategories(1, "");
 
-  const createMutation      = useCreateContent();
-  const updateMutation      = useUpdateContent(id ?? "");
-  const deleteMutation      = useDeleteContent();
-  const publishMutation     = useSetContentPublishState(id ?? "");
+  const createMutation       = useCreateContent();
+  const updateMutation       = useUpdateContent(id ?? "");
+  const deleteMutation       = useDeleteContent();
+  const publishMutation      = useSetContentPublishState(id ?? "");
   const availabilityMutation = useSetContentAvailability(id ?? "");
-  const classifyMutation    = useSetContentClassification(id ?? "");
+  const classifyMutation     = useSetContentClassification(id ?? "");
 
-  const [form, setForm]                   = useState<FormData>(INITIAL_FORM);
+  const [form, setForm]                             = useState<FormData>(INITIAL_FORM);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
-  // sync form with server data when edit
   useEffect(() => {
     if (content && isEdit) {
       setForm({
@@ -87,7 +92,7 @@ export default function ContentForm({ id }: { id?: string }) {
       description:      form.description || null,
       thumbnailImageId: form.thumbnailImageId || null,
       fileId:           form.fileId || null,
-      duration:         form.duration ? parseInt(form.duration) : null,
+      duration:         form.duration ? Number.parseInt(form.duration, 10) : null,
       releaseDate:      form.releaseDate || null,
       contentType:      form.contentType,
     };
@@ -146,7 +151,7 @@ export default function ContentForm({ id }: { id?: string }) {
     </div>
   );
 
-  const isPending = createMutation.isPending || updateMutation.isPending;
+  const isPending  = createMutation.isPending || updateMutation.isPending;
   const categories = categoriesData?.items ?? [];
 
   return (
@@ -176,9 +181,7 @@ export default function ContentForm({ id }: { id?: string }) {
           <div className="grid grid-cols-[200px_1fr] gap-8 py-8">
             <div>
               <h2 className="font-semibold text-base">Content Identity</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Basic information shown to users.
-              </p>
+              <p className="text-sm text-muted-foreground mt-1">Basic information shown to users.</p>
             </div>
             <div className="space-y-4">
               <div className="space-y-1.5">
@@ -191,13 +194,8 @@ export default function ContentForm({ id }: { id?: string }) {
               </div>
               <div className="space-y-1.5">
                 <Label>Content Type</Label>
-                <Select
-                  value={form.contentType}
-                  onValueChange={(v) => set("contentType", v as ContentType)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                <Select value={form.contentType} onValueChange={(v) => set("contentType", v as ContentType)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {CONTENT_TYPES.map((t) => (
                       <SelectItem key={t} value={t}>
@@ -225,9 +223,7 @@ export default function ContentForm({ id }: { id?: string }) {
           <div className="grid grid-cols-[200px_1fr] gap-8 py-8">
             <div>
               <h2 className="font-semibold text-base">Description</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Detailed overview of the content.
-              </p>
+              <p className="text-sm text-muted-foreground mt-1">Detailed overview of the content.</p>
             </div>
             <div className="space-y-1.5">
               <Label>Full Description</Label>
@@ -244,9 +240,7 @@ export default function ContentForm({ id }: { id?: string }) {
           <div className="grid grid-cols-[200px_1fr] gap-8 py-8">
             <div>
               <h2 className="font-semibold text-base">Media</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                File and playback details.
-              </p>
+              <p className="text-sm text-muted-foreground mt-1">File and playback details.</p>
             </div>
             <div className="space-y-4">
               <div className="space-y-1.5">
@@ -289,9 +283,7 @@ export default function ContentForm({ id }: { id?: string }) {
           <div className="grid grid-cols-[200px_1fr] gap-8 py-8">
             <div>
               <h2 className="font-semibold text-base">Categories</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Tag this content with relevant categories.
-              </p>
+              <p className="text-sm text-muted-foreground mt-1">Tag this content with relevant categories.</p>
             </div>
             <div className="flex flex-wrap gap-2">
               {categories.length === 0 ? (
@@ -345,14 +337,14 @@ export default function ContentForm({ id }: { id?: string }) {
               onClick={handleSubmit}
             >
               <CheckCircle size={16} />
-              {isPending ? "Saving..." : isEdit ? "Save Changes" : "Create Content"}
+              {getSaveButtonLabel(isPending, isEdit)}
             </Button>
           </div>
         </div>
       </div>
 
       {/* Right — Status Panel (edit only) */}
-      {isEdit && content && (
+      {isEdit && id && content && (
         <div className="space-y-4">
           <div className="rounded-xl border bg-card p-5 space-y-4">
             <h3 className="font-semibold text-sm">Status</h3>
@@ -365,9 +357,7 @@ export default function ContentForm({ id }: { id?: string }) {
               <Switch
                 checked={content.isPublished}
                 disabled={publishMutation.isPending}
-                onCheckedChange={(v) =>
-                  publishMutation.mutate({ id: id!, isPublished: v })
-                }
+                onCheckedChange={(v) => publishMutation.mutate({ id, isPublished: v })}
               />
             </div>
 
@@ -379,9 +369,7 @@ export default function ContentForm({ id }: { id?: string }) {
               <Switch
                 checked={content.isAvailable}
                 disabled={availabilityMutation.isPending}
-                onCheckedChange={(v) =>
-                  availabilityMutation.mutate({ id: id!, isAvailable: v })
-                }
+                onCheckedChange={(v) => availabilityMutation.mutate({ id, isAvailable: v })}
               />
             </div>
 
@@ -392,15 +380,11 @@ export default function ContentForm({ id }: { id?: string }) {
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">Created</span>
-                <span className="font-medium">
-                  {new Date(content.createdAt).toLocaleDateString()}
-                </span>
+                <span className="font-medium">{new Date(content.createdAt).toLocaleDateString()}</span>
               </div>
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">Updated</span>
-                <span className="font-medium">
-                  {new Date(content.updatedAt).toLocaleDateString()}
-                </span>
+                <span className="font-medium">{new Date(content.updatedAt).toLocaleDateString()}</span>
               </div>
             </div>
           </div>
@@ -411,7 +395,7 @@ export default function ContentForm({ id }: { id?: string }) {
             <Button
               type="button"
               variant="outline" className="w-full justify-start gap-2 text-sm"
-              onClick={() => navigate({ to: "/admin/content/$id/pricing", params: { id: id! } })}
+              onClick={() => navigate({ to: "/admin/content/$id/pricing", params: { id } })}
             >
               <DollarSign size={16} />
               Pricing
